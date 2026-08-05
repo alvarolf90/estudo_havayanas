@@ -1,64 +1,64 @@
-﻿Convencao;Instrumento;Compasso_1;Compasso_2;Duracao;Forca_Primeira_Nota
-C1;Repique;PE TE LE CO | PE -- LE CO | PE TE LE -- | -- -- -- --;;1;
-C1;Caixa;PE TE LE CO | PE -- LE CO | PE TE LE -- | -- -- -- --;;1;
-C1;Xequerê;pe -- le -- | pe -- le -- | pe -- le -- | pe -- -- --;;1;
-C1;Dobra;-- -- -- -- | -- -- -- -- | -- -- -- -- | pe te le co;;1;pe
-C1;Fundo 1;-- -- -- -- | -- -- -- -- | -- -- -- -- | pe te le co;;1;pe
-C1;Fundo 2;-- -- -- -- | -- -- -- -- | -- -- -- -- | pe te le co;;1;pe
-C2;Dobra;-- -- -- -- | -- -- -- -- | pe -- le -- | pe -- -- --;;1;
-C3;Dobra;pe -- -- -- | -- -- -- -- | -- -- la    | pe ta la   ;;1;pe
-Forró 1;Dobra;-- -- -- -- | -- -- le -- | -- -- -- -- | -- -- -- --;;1;
-Forró 2;Dobra;-- te le -- | -- te le -- | -- -- -- -- | -- -- -- --;;1;
-Forró 3;Dobra;pe -- -- co | -- te -- -- | -- -- -- -- | -- -- -- --;;1;
-C3;Caixa;-- -- la   | pe ta la | pe -- -- -- | -- -- -- --;;1;
-C2;Caixa;pe -- le co | -- te le -- | -- -- -- -- | -- -- -- --;;1;
-C6;Dobra;-- -- -- -- | pe.ta.la le -- | -- -- -- -- | pe.ta.la le --;;1;
-C6;Caixa;pe.ta.la le -- | -- -- -- -- | pe.ta.la le -- | -- -- -- -- ;;1;
-C4;Dobra;-- -- -- -- | -- -- -- -- | pe ta la | pe -- -- --;;1;
-C5;Dobra;pe -- -- -- | -- -- -- -- | pe te le co | pe te le co;;1;pe
-C7;Dobra;-- -- -- -- | -- -- le -- | -- -- le -- | -- -- le --;;1;
-C2;Fundo 1;-- -- -- -- | -- -- -- -- | pe -- le -- | pe -- -- --;;1;
-C2;Fundo 2;-- -- -- -- | -- -- -- -- | pe -- le -- | pe -- -- --;;1;
-C2;Xequerê;-- -- -- -- | -- -- -- -- | pe -- le -- | pe -- -- --;;1;
-C2;Repique;pe -- le co | -- te le -- | -- -- -- -- | -- -- -- --;;1;
-C3;Repique;-- -- la   | pe ta la | pe -- -- -- | -- -- -- --;;1;
-C3;Fundo 1;pe -- -- -- | -- -- -- -- | -- -- la    | pe ta la   ;;1;pe
-C3;Fundo 2;pe -- -- -- | -- -- -- -- | -- -- la    | pe ta la   ;;1;pe
-C3;Xequerê;pe -- -- -- | -- -- -- -- | -- -- la    | pe ta la   ;;1;pe
-C4;Fundo 1;-- -- -- -- | -- -- -- -- | pe ta la | pe -- -- --;;1;
-C4;Fundo 2;-- -- -- -- | -- -- -- -- | pe ta la | pe -- -- --;;1;
-C4;Xequerê;-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;;1;
-C4;Repique;pe -- -- co | -- te.te le -- | -- -- -- -- | -- -- -- --;;1;
-C4;Caixa;pe -- -- co | -- te.te le -- | -- -- -- -- | -- -- -- --;;1;
-C5;Caixa;-- te le co | pe -- le.le -- | -- -- -- -- | -- -- -- --;;1;
-C5;Fundo 1;pe -- -- -- | -- -- -- -- | pe te le co | pe te le co;;1;pe
-C5;Fundo 2;pe -- -- -- | -- -- -- -- | pe te le co | pe te le co;;1;pe
-C5;Xequerê;-- -- -- -- | pe -- le -- | -- -- -- -- | -- -- -- --;;1;
-C5;Repique;-- te le co | pe -- le.le -- | -- -- -- -- | -- -- -- --;;1;
-C6;Repique;pe.ta.la le -- | -- -- -- -- | pe.ta.la le -- | -- -- -- -- ;;1;
-C6;Fundo 1;-- -- -- -- | pe.ta.la le -- | -- -- -- -- | pe.ta.la le --;;1;
-C6;Fundo 2;-- -- -- -- | pe.ta.la le -- | -- -- -- -- | pe.ta.la le --;;1;
-C6;Xequerê;pe -- le -- | pe -- le -- | -- -- -- -- | -- -- -- --;;1;
-C7;Fundo 1;-- -- -- -- | -- -- le -- | -- -- le -- | -- -- le --;;1;
-C7;Fundo 2;-- -- -- -- | -- -- le -- | -- -- le -- | -- -- le --;;1;
-C7;Caixa;pe te -- -- | pe te -- -- -- | pe te -- -- | pe te -- --;;1;
-C7;Repique;pe te -- -- | pe te -- -- -- | pe te -- -- | pe te -- --;;1;
-C7;Xequerê;pe -- -- -- | pe -- -- -- | pe -- -- -- | pe -- -- --;;1;
-Conv. Swing;Repique;pe -- -- co | -- -- -- co | -- -- le -- | pe -- -- --;;1;
-Conv. Swing;Caixa;pe -- -- co | -- -- -- co | -- -- le -- | pe -- -- --;;1;
-Conv. Swing;Xequerê;pe -- -- co | -- -- -- co | -- -- le -- | pe -- -- --;;1;
-Conv. Swing;Dobra;pe -- -- co | -- -- -- co | -- -- le -- | pe -- -- --;;1;
-Conv. Swing;Fundo 1;pe -- -- co | -- -- -- co | -- -- le -- | pe -- -- --;;1;
-Conv. Swing;Fundo 2;pe -- -- co | -- -- -- co | -- -- le -- | pe -- -- --;;1;
-Conv. Funk;Repique;-- -- le -- | pe -- le co | -- te le -- | pe -- -- --;;1;
-Conv. Funk;Caixa;-- -- le -- | pe -- le co | -- te le -- | pe -- -- --;;1;
-Conv. Funk;Xequerê;pe -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;;1;
-Conv. Funk;Dobra;pe -- -- -- | -- -- -- -- | -- -- -- -- | -- -- le co;;1;pe
-Conv. Funk;Fundo 1;pe -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;;1;
-Conv. Funk;Fundo 2;pe -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;;1;
-Conv. Pagodão;Repique;-- -- -- -- | -- -- le -- | pe -- -- -- | -- -- -- --;;1;
-Conv. Pagodão;Caixa;-- -- -- -- | -- -- le -- | pe -- -- -- | -- -- -- --;;1;
-Conv. Pagodão;Xequerê;-- -- -- -- | -- -- le -- | pe -- -- -- | -- -- -- --;;1;
-Conv. Pagodão;Dobra;pe -- -- -- | -- -- -- -- | -- -- -- -- | pe -- -- --;;1;pe
-Conv. Pagodão;Fundo 1;pe -- -- -- | -- -- -- -- | -- -- -- -- | pe -- -- --;;1;pe*
-Conv. Pagodão;Fundo 2;pe -- -- -- | -- -- -- -- | -- -- -- -- | pe -- -- --;;1;pe*
+﻿Convencao;Instrumento;Compasso_1;Forca_Primeira_Nota
+C1;Repique;PE TE LE CO | PE -- LE CO | PE TE LE -- | -- -- -- --;
+C1;Caixa;PE TE LE CO | PE -- LE CO | PE TE LE -- | -- -- -- --;
+C1;Xequerê;pe -- le -- | pe -- le -- | pe -- le -- | pe -- -- --;
+C1;Dobra;-- -- -- -- | -- -- -- -- | -- -- -- -- | pe te le co;pe
+C1;Fundo 1;-- -- -- -- | -- -- -- -- | -- -- -- -- | pe te le co;pe
+C1;Fundo 2;-- -- -- -- | -- -- -- -- | -- -- -- -- | pe te le co;pe
+C2;Dobra;-- -- -- -- | -- -- -- -- | pe -- le -- | pe -- -- --;
+C3;Dobra;pe -- -- -- | -- -- -- -- | -- -- la    | pe ta la   ;pe
+Forró 1;Dobra;-- -- -- -- | -- -- le -- | -- -- -- -- | -- -- -- --;
+Forró 2;Dobra;-- te le -- | -- te le -- | -- -- -- -- | -- -- -- --;
+Forró 3;Dobra;pe -- -- co | -- te -- -- | -- -- -- -- | -- -- -- --;
+C3;Caixa;-- -- la   | pe ta la | pe -- -- -- | -- -- -- --;
+C2;Caixa;pe -- le co | -- te le -- | -- -- -- -- | -- -- -- --;
+C6;Dobra;-- -- -- -- | pe.ta.la le -- | -- -- -- -- | pe.ta.la le --;
+C6;Caixa;pe.ta.la le -- | -- -- -- -- | pe.ta.la le -- | -- -- -- -- ;
+C4;Dobra;-- -- -- -- | -- -- -- -- | pe ta la | pe -- -- --;
+C5;Dobra;pe -- -- -- | -- -- -- -- | pe te le co | pe te le co;pe
+C7;Dobra;-- -- -- -- | -- -- le -- | -- -- le -- | -- -- le --;
+C2;Fundo 1;-- -- -- -- | -- -- -- -- | pe -- le -- | pe -- -- --;
+C2;Fundo 2;-- -- -- -- | -- -- -- -- | pe -- le -- | pe -- -- --;
+C2;Xequerê;-- -- -- -- | -- -- -- -- | pe -- le -- | pe -- -- --;
+C2;Repique;pe -- le co | -- te le -- | -- -- -- -- | -- -- -- --;
+C3;Repique;-- -- la   | pe ta la | pe -- -- -- | -- -- -- --;
+C3;Fundo 1;pe -- -- -- | -- -- -- -- | -- -- la    | pe ta la   ;pe
+C3;Fundo 2;pe -- -- -- | -- -- -- -- | -- -- la    | pe ta la   ;pe
+C3;Xequerê;pe -- -- -- | -- -- -- -- | -- -- la    | pe ta la   ;pe
+C4;Fundo 1;-- -- -- -- | -- -- -- -- | pe ta la | pe -- -- --;
+C4;Fundo 2;-- -- -- -- | -- -- -- -- | pe ta la | pe -- -- --;
+C4;Xequerê;-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;
+C4;Repique;pe -- -- co | -- te.te le -- | -- -- -- -- | -- -- -- --;
+C4;Caixa;pe -- -- co | -- te.te le -- | -- -- -- -- | -- -- -- --;
+C5;Caixa;-- te le co | pe -- le.le -- | -- -- -- -- | -- -- -- --;
+C5;Fundo 1;pe -- -- -- | -- -- -- -- | pe te le co | pe te le co;pe
+C5;Fundo 2;pe -- -- -- | -- -- -- -- | pe te le co | pe te le co;pe
+C5;Xequerê;-- -- -- -- | pe -- le -- | -- -- -- -- | -- -- -- --;
+C5;Repique;-- te le co | pe -- le.le -- | -- -- -- -- | -- -- -- --;
+C6;Repique;pe.ta.la le -- | -- -- -- -- | pe.ta.la le -- | -- -- -- -- ;
+C6;Fundo 1;-- -- -- -- | pe.ta.la le -- | -- -- -- -- | pe.ta.la le --;
+C6;Fundo 2;-- -- -- -- | pe.ta.la le -- | -- -- -- -- | pe.ta.la le --;
+C6;Xequerê;pe -- le -- | pe -- le -- | -- -- -- -- | -- -- -- --;
+C7;Fundo 1;-- -- -- -- | -- -- le -- | -- -- le -- | -- -- le --;
+C7;Fundo 2;-- -- -- -- | -- -- le -- | -- -- le -- | -- -- le --;
+C7;Caixa;pe te -- -- | pe te -- -- -- | pe te -- -- | pe te -- --;
+C7;Repique;pe te -- -- | pe te -- -- -- | pe te -- -- | pe te -- --;
+C7;Xequerê;pe -- -- -- | pe -- -- -- | pe -- -- -- | pe -- -- --;
+Conv. Swing;Repique;pe -- -- co | -- -- -- co | -- -- le -- | pe -- -- --;
+Conv. Swing;Caixa;pe -- -- co | -- -- -- co | -- -- le -- | pe -- -- --;
+Conv. Swing;Xequerê;pe -- -- co | -- -- -- co | -- -- le -- | pe -- -- --;
+Conv. Swing;Dobra;pe -- -- co | -- -- -- co | -- -- le -- | pe -- -- --;
+Conv. Swing;Fundo 1;pe -- -- co | -- -- -- co | -- -- le -- | pe -- -- --;
+Conv. Swing;Fundo 2;pe -- -- co | -- -- -- co | -- -- le -- | pe -- -- --;
+Conv. Funk;Repique;-- -- le -- | pe -- le co | -- te le -- | pe -- -- --;
+Conv. Funk;Caixa;-- -- le -- | pe -- le co | -- te le -- | pe -- -- --;
+Conv. Funk;Xequerê;pe -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;
+Conv. Funk;Dobra;pe -- -- -- | -- -- -- -- | -- -- -- -- | -- -- le co;pe
+Conv. Funk;Fundo 1;pe -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;
+Conv. Funk;Fundo 2;pe -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;
+Conv. Pagodão;Repique;-- -- -- -- | -- -- le -- | pe -- -- -- | -- -- -- --;
+Conv. Pagodão;Caixa;-- -- -- -- | -- -- le -- | pe -- -- -- | -- -- -- --;
+Conv. Pagodão;Xequerê;-- -- -- -- | -- -- le -- | pe -- -- -- | -- -- -- --;
+Conv. Pagodão;Dobra;pe -- -- -- | -- -- -- -- | -- -- -- -- | pe -- -- --;pe
+Conv. Pagodão;Fundo 1;pe -- -- -- | -- -- -- -- | -- -- -- -- | pe -- -- --;pe*
+Conv. Pagodão;Fundo 2;pe -- -- -- | -- -- -- -- | -- -- -- -- | pe -- -- --;pe*
