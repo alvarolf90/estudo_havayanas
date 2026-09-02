@@ -1,7 +1,7 @@
 library(shiny)
 library(bslib)
 library(shinyjs)
-
+ 
 # ==============================================================================
 # 1. LEITURA DE DADOS E CONFIGURAÇÕES GERAIS
 # ==============================================================================
@@ -44,14 +44,7 @@ instrumentos_disponiveis <- unique(c(df_levadas$Instrumento, df_convencoes$Instr
 
 todos_padroes <- unique(c(levadas_disponiveis, convencoes_disponiveis))
 map_imagens <- sapply(todos_padroes, function(nome) {
-  
   nome_limpo <- limpar_nome_imagem(nome)
-  # nome_limpo <- tolower(nome)
-  # nome_limpo <- iconv(nome_limpo, to = "ASCII//TRANSLIT")
-  # nome_limpo <- gsub("['\"~^`´]", "", nome_limpo)
-  # nome_limpo <- gsub("\\.", "", nome_limpo)
-  # nome_limpo <- gsub("\\s+", "_", trimws(nome_limpo))
-  # nome_limpo <- gsub("[^a-z0-9_]", "", nome_limpo)
   return(paste0(nome_limpo, ".png"))
 }, USE.NAMES = TRUE)
 
@@ -109,9 +102,6 @@ ui <- page_sidebar(
       }
     ")),
     
-    # ==========================================================================
-    # MOTOR JAVASCRIPT
-    # ==========================================================================
     # ==========================================================================
     # MOTOR JAVASCRIPT
     # ==========================================================================
@@ -218,7 +208,16 @@ ui <- page_sidebar(
         let isAlta = (cleanToken === cleanToken.toUpperCase() && base !== '');
         let isRulo = token.includes('~'); let isSeca = token.includes('*');
         let inst = instrumento_str ? instrumento_str : 'Caixa';
-        let balanceVol = isPrincipal ? 1.0 : 0.5;
+        let balanceVol = 1.0;
+        if (isPrincipal) {
+            balanceVol = window.volPrincipal !== undefined ? window.volPrincipal : 1.0;
+        } else {
+            if (window.volAcompMap && window.volAcompMap[inst] !== undefined) {
+                balanceVol = window.volAcompMap[inst];
+            } else {
+                balanceVol = 0.5;
+            }
+        }
         let instVol = 1.0; let instLow = inst.toLowerCase();
 
         let baseFreq = 400;
@@ -262,11 +261,22 @@ ui <- page_sidebar(
 
       function formatPetelecoLine(linha_str, offset) {
         if (!linha_str) return '';
-        let html = []; let tempos = linha_str.split('|');
+        let html = []; 
+        let tempos = linha_str.split('|');
+        
         for (let i = 0; i < tempos.length; i++) {
             let parts = tempos[i].trim().split(/\\s+/);
             for (let j = 0; j < parts.length; j++) {
-                if (parts[j] === '--') continue;
+                
+                if (parts[j] === '--') {
+                    if (j === 0) {
+                        parts[j] = '<span style=\"display: inline-block; min-width: 6ch; white-space: nowrap; text-align: center; color: #bdc3c7;\">(pe)</span>';
+                    } else {
+                        parts[j] = '<span style=\"display: inline-block; width: min-width: 6ch; white-space: nowrap; text-align: center; visibility: hidden;\">--</span>';
+                    }
+                    continue;
+                }
+                
                 let sub_parts = parts[j].split('.'); let fmt_sub = [];
                 for(let k=0; k<sub_parts.length; k++) {
                     let sp = sub_parts[k]; let isSeca = sp.includes('*'); let clean = sp.replace('*', '');
@@ -275,11 +285,12 @@ ui <- page_sidebar(
                     else if (/[A-Z]/.test(clean) && clean === clean.toUpperCase()) txt = '<b>' + clean + '</b>';
                     if(isSeca) txt += '*'; fmt_sub.push(txt);
                 }
-                parts[j] = fmt_sub.join('.');
+                parts[j] = '<span style=\"display: inline-block; min-width: 6ch; white-space: nowrap; text-align: center;\">' + fmt_sub.join('.') + '</span>';
             }
             html.push(\"<span id='span-tempo-\" + (i + 1 + offset) + \"' class='span-tempo' style='padding: 4px 8px; margin: 2px;'>\" + parts.join(' ') + \"</span>\");
         }
-        return html.join(\" <span style='color: #bdc3c7'>|</span> \");
+        
+        return \"<span style='color: #bdc3c7; font-weight: bold;'>|</span> \" + html.join(\" \") + \" <span style='color: #bdc3c7; font-weight: bold;'>|</span>\";
       }
 
       Shiny.addCustomMessageHandler(\"startPlayback\", function(payload) {
@@ -297,7 +308,7 @@ ui <- page_sidebar(
           for (let i = 0; i < 4; i++) {
               let beepTime = window.audioQueueTime + (i * beatDur);
               playOscillator(880, beepTime, 0.05, 0.5, 'sine');
-              let num = 4 - i;
+              let num = i + 1;
 
               if (i === 3 && window.measureQueue[0] && window.measureQueue[0].nome.toLowerCase() === 'c2') {
                   Object.keys(window.measureQueue[0].strings).forEach(inst => {
@@ -314,8 +325,12 @@ ui <- page_sidebar(
               setTimeout(() => {
                   $('#status_texto').text('Atenção, bateria...');
                   $('#conteudo_contador').html('<div class=\"contador-numero\">' + num + '</div>');
-                  $('#box_proximo_container').html('<div style=\"opacity:1; display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%;\"><h6 class=\"piscar\" style=\"color:#EF6C00; font-weight:bold; margin:0;\">ATENÇÃO BATERIA: PREPARA</h6><h2 style=\"font-size: 2.2rem; color: #5E2157; font-weight: 900; margin: 5px 0;\">' + (window.measureQueue[0].nome || '-') + '</h2></div>');
-              }, Math.max(0, (beepTime - window.audioCtx.currentTime) * 1000));
+                  
+                  let n = window.measureQueue[0];
+                  let iH = n && n.img ? '<img src=\"' + n.img + '\" style=\"max-height: 90px; max-width: 100%; object-fit: contain;\">' : '<div style=\"height: 90px;\"></div>';
+                  
+                  $('#box_proximo_container').html('<div style=\"opacity:1; display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%;\"><h6 class=\"piscar\" style=\"color:#EF6C00; font-weight:bold; margin:0;\">ATENÇÃO BATERIA: PREPARA</h6><h2 style=\"font-size: 1.8rem; color: #5E2157; font-weight: 900; margin: 2px 0;\">' + (n ? n.nome : '-') + '</h2><div style=\"height: 100px; display: flex; align-items: center; justify-content: center; width: 100%;\">' + iH + '</div></div>');
+                              }, Math.max(0, (beepTime - window.audioCtx.currentTime) * 1000));
           }
 
           window.audioQueueTime += 4 * beatDur;
@@ -323,6 +338,12 @@ ui <- page_sidebar(
 
           window.schedulerTimer = setInterval(schedulerLoop, 100);
       });
+      
+      Shiny.addCustomMessageHandler(\"updateVolume\", function(v) {
+          window.volPrincipal = v.p;
+          window.volAcompMap = v.a;
+      });
+
 
       Shiny.addCustomMessageHandler(\"appendBatch\", function(batch) { window.measureQueue.push(...batch); });
 
@@ -359,17 +380,17 @@ ui <- page_sidebar(
               if (window.isLoop) {
                   $('#conteudo_contador').html('<div class=\"contador-numero texto-desfoque\">∞</div>');
                   $('#box_proximo_container').html('<div style=\"display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; opacity: 0.3;\"><h2 style=\"font-size: 1.8rem; color: #5E2157; font-weight: 900; margin: 0;\">MODO LOOP</h2></div>').css('box-shadow', '0 8px 20px rgba(0,0,0,0.05)');
-              } else {
-                  if (m.restantes === 1) {
-                      $('#conteudo_contador').html('<div class=\"contador-numero texto-desfoque\">-</div>');
-                      let iH = m.futuro_img ? '<img src=\"'+m.futuro_img+'\" style=\"max-height: 110px; max-width: 100%; object-fit: contain;\">' : '<div style=\"height: 110px;\"></div>';
-                      $('#box_proximo_container').html('<div style=\"display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; position: relative;\"><div style=\"opacity: 1; transition: opacity 0.25s ease-in-out; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;\"><h6 class=\"piscar\" style=\"color: #EF6C00; font-weight: bold; margin: 0; min-height: 20px;\">ATENÇÃO BATERIA: PREPARA</h6><h2 style=\"font-size: 2.2rem; color: #5E2157; font-weight: 900; text-align: center; margin: 5px 0; min-height: 45px;\">' + (m.futuro || '-') + '</h2><div style=\"height: 120px; display: flex; align-items: center; justify-content: center; width: 100%;\">' + iH + '</div></div></div>').css('box-shadow', '0 8px 30px rgba(239,108,0,0.5)');
-                  } else {
-                      $('#conteudo_contador').html('<div class=\"contador-numero texto-desfoque\">-</div>');
-                      let iH = m.futuro_img ? '<img src=\"'+m.futuro_img+'\" style=\"max-height: 110px; max-width: 100%; object-fit: contain;\">' : '<div style=\"height: 110px;\"></div>';
-                      $('#box_proximo_container').html('<div style=\"display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; position: relative;\"><div style=\"opacity: 0; transition: opacity 0.25s ease-in-out; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;\"><h6 style=\"color: #EF6C00; font-weight: bold; margin: 0; min-height: 20px;\">ATENÇÃO BATERIA: PREPARA</h6><h2 style=\"font-size: 2.2rem; color: #5E2157; font-weight: 900; text-align: center; margin: 5px 0; min-height: 45px;\">' + (m.futuro || '-') + '</h2><div style=\"height: 120px; display: flex; align-items: center; justify-content: center; width: 100%;\">' + iH + '</div></div><div style=\"position: absolute; color: #bdc3c7; font-weight: bold; font-style: italic; font-size: 1.3rem;\">MANTÉM...</div></div>').css('box-shadow', '0 8px 20px rgba(239,108,0,0.05)');
-                  }
-              }
+                              } else {
+                                if (m.restantes === 1) {
+                                  let iH = m.futuro_img ? '<img src=\"'+m.futuro_img+'\" style=\"max-height: 90px; max-width: 100%; object-fit: contain;\">' : '<div style=\"height: 90px;\"></div>';
+                                  
+                                  $('#conteudo_contador').html('<div class=\"contador-numero texto-desfoque\">-</div>');
+                                  $('#box_proximo_container').html('<div style=\"display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%;\"><h6 class=\"piscar\" style=\"color: #EF6C00; font-weight: bold; margin: 0; min-height: 20px;\">ATENÇÃO BATERIA: PREPARA</h6><h2 style=\"font-size: 1.8rem; color: #5E2157; font-weight: 900; text-align: center; margin: 2px 0; min-height: 35px;\">' + (m.futuro || '-') + '</h2><div style=\"height: 100px; display: flex; align-items: center; justify-content: center; width: 100%;\">' + iH + '</div></div>').css('box-shadow', '0 8px 30px rgba(239,108,0,0.5)');
+                                } else {
+                                  $('#conteudo_contador').html('<div class=\"contador-numero texto-desfoque\">-</div>');
+                                  $('#box_proximo_container').html('<div style=\"display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; opacity: 0.3;\"><h2 style=\"font-size: 1.8rem; color: #5E2157; font-weight: 900; margin: 0;\">-</h2><div style=\"position: absolute; color: #bdc3c7; font-weight: bold; font-style: italic; font-size: 1.3rem;\">MANTÉM...</div></div>').css('box-shadow', '0 8px 20px rgba(239,108,0,0.05)');
+                                }
+                              }
 
               let str1 = (currentMet === 1) ? m.html : m_next.html;
               let str2 = (currentMet === 1) ? m_next.html : m.html;
@@ -414,15 +435,18 @@ ui <- page_sidebar(
   
   sidebar = sidebar(
     width = 340,
+    
+    div(class = "btn-container", actionButton("btn_play", "Tocar", icon = icon("play-circle"), class = "btn-lg btn-primary", disabled = "TRUE")),
+    hr(),
+    
     sliderInput("bpm", "Velocidade (BPM):", min = 40, max = 150, value = 80, step = 5),
-    sliderInput("rep_levadas", "Repetições das Levadas (mín - máx):", min = 2, max = 32, value = c(2, 8), step = 2),
+    sliderInput("rep_levadas", "Repetições das Levadas (mín - máx):", min = 4, max = 32, value = c(4, 8), step = 2),
     selectInput("instrumento", "Foco no Instrumento:", choices = instrumentos_disponiveis, selected = "Dobra"),
     
-    selectInput("timbre_som", "Estilo / Timbre dos Sons:", 
-                choices = c("Meus Sons (.wav)", "Orgânico / Acústico", "Sintético Padrão", "Eletrônico / Punch"), 
-                selected = "Meus Sons (.wav)"),
-    
+    # O parâmetro 'open' força todas as abas listadas a já começarem abertas!
     accordion(
+      open = c("Levadas", "Convenções", "Acompanhamento", "Mixagem"),
+      
       accordion_panel("Levadas", 
                       checkboxGroupInput("levadas_ativas", NULL, choices = levadas_disponiveis, selected = character(0)),
                       conditionalPanel(
@@ -438,11 +462,12 @@ ui <- page_sidebar(
       accordion_panel("Acompanhamento", 
                       checkboxGroupInput("acompanhamento_ativo", "Adicionar à banda:", choices = character(0), selected = character(0)),
                       uiOutput("config_acompanhamento")
+      ),
+      accordion_panel("Mixagem", 
+                      sliderInput("vol_principal", "Volume do Foco:", min = 0, max = 100, value = 100, step = 5, post = "%"),
+                      uiOutput("mixagem_acomp")
       )
-    ),
-    
-    hr(),
-    div(class = "btn-container", actionButton("btn_play", "Tocar", icon = icon("play-circle"), class = "btn-lg btn-primary", disabled = "TRUE"))
+    )
   ),
   
   card(
@@ -450,7 +475,10 @@ ui <- page_sidebar(
     div(
       style = "display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 15px; padding: 0 10px;",
       h4(id = "status_texto", "Pronto para o ensaio! Escolha as levadas e toque.", style = "color: #EF6C00 !important; font-weight: bold; margin: 0;"),
-      actionButton("btn_toggle_box_atual", " Ocultar Sinal Atual", icon = icon("eye-slash"), class = "btn-sm btn-outline-secondary", style = "font-weight: bold; border-color: #bdc3c7;")
+      div(
+        actionButton("btn_toggle_leitura", " Modo Avançado", icon = icon("eye-slash"), class = "btn-sm btn-outline-secondary", style = "font-weight: bold; border-color: #bdc3c7; margin-right: 8px;"),
+        actionButton("btn_toggle_box_atual", " Ocultar Sinal Atual", icon = icon("eye-slash"), class = "btn-sm btn-outline-secondary", style = "font-weight: bold; border-color: #bdc3c7;")
+      )
     ),
     
     div(
@@ -473,6 +501,7 @@ ui <- page_sidebar(
     ),
     
     div(
+      id = "box_leitura",
       style = "background-color: #f8f9fa; padding: 15px 20px; border-radius: 10px; width: 100%; margin-top: 5px; border: 1px solid #e0e0e0; min-height: 140px; display: flex; flex-direction: column; justify-content: center;",
       h5(textOutput("titulo_instrumento"), style = "color: #7f8c8d !important; margin-bottom: 8px; text-align: center;"),
       tags$div(id = "texto_peteleco", "Nenhum sinal ativo no momento.")
@@ -510,10 +539,45 @@ server <- function(input, output, session) {
   output$titulo_instrumento <- renderText({ paste("Leitura -", input$instrumento) })
   
   estado <- reactiveValues(
-    rodando = FALSE, exibir_box_atual = TRUE, veio_de_convencao = TRUE, nota_forcada = "",
+    rodando = FALSE, exibir_box_atual = TRUE, exibir_leitura = TRUE, veio_de_convencao = TRUE, nota_forcada = "",
     fase_atual = "Levada", padrao_atual = "", compassos_restantes = 0, compassos_tocados = 0,
     proxima_fase = "", proximo_padrao = "", proximos_compassos = 0
   )
+  
+  observe({
+    req(input$vol_principal) 
+    vol_p <- input$vol_principal / 100.0
+    
+    vol_map <- list()
+    if (length(input$acompanhamento_ativo) > 0) {
+      for (inst in input$acompanhamento_ativo) {
+        id_inst <- gsub(" ", "_", inst)
+        val <- input[[paste0("vol_", id_inst)]]
+        vol_map[[inst]] <- if(is.null(val)) 0.5 else (val / 100.0)
+      }
+    }
+    session$sendCustomMessage("updateVolume", list(p = vol_p, a = vol_map))
+  })
+  
+  output$mixagem_acomp <- renderUI({
+    req(input$acompanhamento_ativo)
+    ui_list <- lapply(input$acompanhamento_ativo, function(inst) {
+      id_inst <- gsub(" ", "_", inst)
+      sliderInput(paste0("vol_", id_inst), paste("Volume -", inst, ":"), min = 0, max = 100, value = 50, step = 5, post = "%")
+    })
+    do.call(tagList, ui_list)
+  })
+  
+  observeEvent(input$btn_toggle_leitura, {
+    estado$exibir_leitura <- !estado$exibir_leitura
+    if (estado$exibir_leitura) {
+      updateActionButton(session, "btn_toggle_leitura", label = " Modo Avançado", icon = icon("eye-slash"))
+      shinyjs::show("box_leitura")
+    } else {
+      updateActionButton(session, "btn_toggle_leitura", label = " Mostrar Leitura", icon = icon("eye"))
+      shinyjs::hide("box_leitura")
+    }
+  })
   
   observeEvent(input$btn_toggle_box_atual, {
     estado$exibir_box_atual <- !estado$exibir_box_atual
@@ -534,7 +598,6 @@ server <- function(input, output, session) {
   reset_tudo <- function() {
     estado$rodando <- FALSE
     
-    # CORREÇÃO: Limpar a memória de padrões para evitar que "vazem" para o próximo play
     estado$padrao_atual <- ""
     estado$proximo_padrao <- ""
     estado$proxima_fase <- ""
@@ -544,11 +607,10 @@ server <- function(input, output, session) {
     shinyjs::runjs("stopPlayback();")
     updateActionButton(session, "btn_play", label = " Tocar", icon = icon("play-circle"))
     shinyjs::removeClass("btn_play", "btn-danger"); shinyjs::addClass("btn_play", "btn-primary")
-    shinyjs::enable("bpm"); shinyjs::enable("rep_levadas"); shinyjs::enable("instrumento"); shinyjs::enable("timbre_som")
+    shinyjs::enable("bpm"); shinyjs::enable("rep_levadas"); shinyjs::enable("instrumento"); 
     shinyjs::enable("levadas_ativas"); shinyjs::enable("variada_opcoes"); shinyjs::enable("conv_ativas"); shinyjs::enable("acompanhamento_ativo")
   }
   
-  # NOVA FUNÇÃO: Identifica automaticamente a duração da convenção lendo o CSV
   get_duracao <- function(padrao, df_conv) {
     if ("Duracao" %in% colnames(df_conv)) {
       dur <- df_conv$Duracao[df_conv$Convencao == padrao][1]
@@ -564,7 +626,6 @@ server <- function(input, output, session) {
       c2_str <- df_conv[[4]][df_conv$Convencao == padrao][1]
     }
     
-    # Se o compasso 2 estiver vazio, a convenção tem apenas 1 compasso
     if (is.null(c2_str) || is.na(c2_str) || trimws(c2_str) == "" || grepl("^[\\s|-]*$", c2_str, perl=TRUE)) {
       return(1)
     } else {
@@ -577,30 +638,47 @@ server <- function(input, output, session) {
     else { df <- df_convencoes[df_convencoes$Convencao == padrao & df_convencoes$Instrumento == instrumento, ] }
     if (nrow(df) == 0) return("-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --")
     
-    col_c1 <- if("Compasso_1" %in% colnames(df)) "Compasso_1" else if("Compasso.1" %in% colnames(df)) "Compasso.1" else names(df)[3]
-    col_c2 <- if("Compasso_2" %in% colnames(df)) "Compasso_2" else if("Compasso.2" %in% colnames(df)) "Compasso.2" else names(df)[4]
-    c1 <- df[[col_c1]][1]; c2 <- df[[col_c2]][1]
+    # 1. Busca dinamicamente TODAS as colunas que comecem com "Compasso"
+    cols_compasso <- grep("^Compasso", colnames(df), value = TRUE, ignore.case = TRUE)
+    cols_compasso <- sort(cols_compasso) # Garante a ordem correta 1, 2, 3, 4
     
+    valores <- as.character(df[1, cols_compasso])
     
+    # 2. Mantém apenas os compassos que foram preenchidos no CSV para esta linha
+    valores_validos <- valores[!is.na(valores) & trimws(valores) != ""]
     
-    if (is.na(c1) || trimws(c1) == "") c1 <- "-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --"
+    if (length(valores_validos) == 0) {
+      valores_validos <- c("-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --")
+    }
     
-    # CORREÇÃO AQUI: Se for um padrão de 1 compasso e o c2 não existir, espelha o c1 no c2
-    if (is.na(c2) || trimws(c2) == "") c2 <- c1
-    
-    col_loop <- if("Loop_C2" %in% colnames(df)) "Loop_C2" else if("Loop.C2" %in% colnames(df)) "Loop.C2" else NULL
+    # Verifica loop estático no compasso 2
+    col_loop <- grep("^Loop", colnames(df), value = TRUE, ignore.case = TRUE)[1]
     is_loop_c2 <- FALSE
-    if (fase == "Levada" && !is.null(col_loop)) {
+    if (fase == "Levada" && !is.na(col_loop)) {
       val_loop <- df[[col_loop]][1]
       if (!is.na(val_loop) && toupper(trimws(as.character(val_loop))) %in% c("SIM", "S", "TRUE", "1")) is_loop_c2 <- TRUE
     }
-    if (is_loop_c2) { idx <- if (tocados == 0) 1 else 2 } else { idx <- (tocados %% 2) + 1 }
     
-    comp_str <- if (idx == 1) c1 else c2
-    if (fase == "Levada") { if (tocados == 0 && veio_conv) comp_str <- gsub("\\([^)]+\\)", "--", comp_str) else comp_str <- gsub("\\(|\\)", "", comp_str) } 
-    else { comp_str <- gsub("\\(|\\)", "", comp_str) }
+    # 3. Faz o looping matemático baseado na quantidade exata de compassos da levada
+    if (is_loop_c2 && length(valores_validos) >= 2) { 
+      idx <- if (tocados == 0) 1 else 2 
+    } else { 
+      idx <- (tocados %% length(valores_validos)) + 1 
+    }
     
-    if (tocados == 0 && !is.null(nota_forcada) && !is.na(nota_forcada) && nota_forcada != "") comp_str <- sub("^\\S+", nota_forcada, trimws(comp_str))
+    comp_str <- valores_validos[idx]
+    
+    if (fase == "Levada") { 
+      if (tocados == 0 && veio_conv) comp_str <- gsub("\\([^)]+\\)", "--", comp_str) 
+      else comp_str <- gsub("\\(|\\)", "", comp_str) 
+    } else { 
+      comp_str <- gsub("\\(|\\)", "", comp_str) 
+    }
+    
+    if (tocados == 0 && !is.null(nota_forcada) && !is.na(nota_forcada) && nota_forcada != "") {
+      comp_str <- sub("^\\S+", nota_forcada, trimws(comp_str))
+    }
+    
     return(comp_str)
   }
   
@@ -619,8 +697,6 @@ server <- function(input, output, session) {
     estado$fase_atual <- estado$proxima_fase
     estado$padrao_atual <- estado$proximo_padrao
     
-    # CORREÇÃO AQUI: Se a próxima fase for uma Convenção, ela durará EXATAMENTE 1 compasso.
-    # Caso contrário (Levadas), respeita o que foi sorteado/definido pela planilha.
     if (estado$fase_atual == "Convenção") {
       estado$compassos_restantes <- 1
     } else {
@@ -688,18 +764,15 @@ server <- function(input, output, session) {
         } else { comp_str <- "-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --" }
       }
       
-      # INJEÇÃO DA ANACRUSE CORRETA ("-- -- co co") no último tempo do compasso anterior à C2
-      # INJEÇÃO DA ANACRUSE CORRETA ("co.co") NO ÚLTIMO TEMPO ANTES DA C2
       if (estado$compassos_restantes == 1 && tolower(estado$proximo_padrao) == "c2" && inst %in% c("Caixa", "Repique")) {
         tempos <- strsplit(comp_str, "\\|")[[1]]
         ultimo_tempo <- trimws(tempos[length(tempos)])
         notas <- strsplit(ultimo_tempo, "\\s+")[[1]]
         
-        # Garante que temos as 4 posições. Substitui apenas a 4ª (espaço do 'co')
         if (length(notas) >= 4) {
           notas[4] <- "co.co"
         } else {
-          notas <- c("--", "--", "--", "co.co") # Fallback de segurança
+          notas <- c("--", "--", "--", "co.co")
         }
         
         tempos[length(tempos)] <- paste(notas, collapse = " ")
@@ -717,8 +790,8 @@ server <- function(input, output, session) {
     estado$compassos_restantes <- estado$compassos_restantes - 1; estado$compassos_tocados <- estado$compassos_tocados + 1
     preencher_proximo(); return(res)
   }
-
-    gerar_lote_compassos <- function(qtd) {
+  
+  gerar_lote_compassos <- function(qtd) {
     lote <- vector("list", qtd)
     for (i in seq_len(qtd)) lote[[i]] <- gerar_compasso_interno()
     return(lote)
@@ -730,7 +803,7 @@ server <- function(input, output, session) {
     
     
     if (estado$rodando) {
-      shinyjs::disable("bpm"); shinyjs::disable("rep_levadas"); shinyjs::disable("instrumento"); shinyjs::disable("timbre_som")
+      shinyjs::disable("bpm"); shinyjs::disable("rep_levadas"); shinyjs::disable("instrumento");
       shinyjs::disable("levadas_ativas"); shinyjs::disable("variada_opcoes"); shinyjs::disable("conv_ativas"); shinyjs::disable("acompanhamento_ativo")
       
       estado$veio_de_convencao <- TRUE; estado$nota_forcada <- ""
@@ -750,9 +823,22 @@ server <- function(input, output, session) {
       estado$compassos_tocados <- 0
       preencher_proximo()
       
+      vol_map <- list()
+      if (length(input$acompanhamento_ativo) > 0) {
+        for (inst in input$acompanhamento_ativo) {
+          id_inst <- gsub(" ", "_", inst)
+          val <- input[[paste0("vol_", id_inst)]]
+          vol_map[[inst]] <- if(is.null(val)) 0.5 else (val / 100.0)
+        }
+      }
+      
       payload <- list(
-        bpm = as.numeric(input$bpm), timbre = input$timbre_som,
-        instPrincipal = input$instrumento, isLoop = (length(input$levadas_ativas) + length(input$conv_ativas)) == 1,
+        bpm = as.numeric(input$bpm), 
+        timbre = "Meus Sons (.wav)",
+        volPrincipal = input$vol_principal / 100.0,
+        volAcompMap = vol_map,
+        instPrincipal = input$instrumento, 
+        isLoop = (length(input$levadas_ativas) + length(input$conv_ativas)) == 1,
         batch = gerar_lote_compassos(16)
       )
       session$sendCustomMessage("startPlayback", payload)
