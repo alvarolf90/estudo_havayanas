@@ -174,6 +174,8 @@ ui <- page_sidebar(
         return JSON.parse(json);
       };
 
+      Shiny.addCustomMessageHandler('debugLog', function(msg) { console.log('R_DEBUG: ' + msg); });
+
       Shiny.addCustomMessageHandler('gerarLinkSequencia', function(seqObj) {
         var codigo = window.codificarSequencia(seqObj);
         var base = window.top.location.origin + window.top.location.pathname;
@@ -1106,7 +1108,9 @@ server <- function(input, output, session) {
         }
       }
       estado$compassos_tocados <- 0
+      session$sendCustomMessage("debugLog", paste("BEFORE preencher_proximo idx=", estado$sequencia_indice, "restantes=", estado$compassos_restantes, "fim=", isTRUE(estado$sequencia_fim)))
       preencher_proximo()
+      session$sendCustomMessage("debugLog", paste("AFTER preencher_proximo idx=", estado$sequencia_indice, "restantes=", estado$compassos_restantes, "fim=", isTRUE(estado$sequencia_fim), "proximo_padrao=", estado$proximo_padrao))
       
       vol_map <- list()
       if (!isTRUE(estado$modo_sequencia) && length(input$acompanhamento_ativo) > 0) {
@@ -1126,6 +1130,7 @@ server <- function(input, output, session) {
         isLoop = if (isTRUE(estado$modo_sequencia)) FALSE else (length(input$levadas_ativas) + length(input$conv_ativas)) == 1,
         batch = gerar_lote_compassos(16)
       )
+      session$sendCustomMessage("debugLog", paste("BATCH LEN=", length(payload$batch), "bpm=", payload$bpm, "inst=", payload$instPrincipal))
       session$sendCustomMessage("startPlayback", payload)
       
       updateActionButton(session, id_botao, label = " Pausar", icon = icon("pause-circle"))
