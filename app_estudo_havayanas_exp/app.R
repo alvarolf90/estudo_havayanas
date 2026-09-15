@@ -347,7 +347,7 @@ ui <- page_sidebar(
           window.timbre = payload.timbre;
           window.instPrincipal = payload.instPrincipal; window.isLoop = payload.isLoop;
           window.measureQueue = payload.batch;
-          console.log("JSDBG startPlayback batchLen=" + payload.batch.length + " lastFim=" + (payload.batch.length ? payload.batch[payload.batch.length-1].fim_sequencia : "n/a"));
+          console.log(\"JSDBG startPlayback batchLen=\" + payload.batch.length + \" lastFim=\" + (payload.batch.length ? payload.batch[payload.batch.length-1].fim_sequencia : \"n/a\"));
           window.metadeAtiva = 1;
 
           let now = window.audioCtx.currentTime; let beatDur = 60.0 / window.bpm;
@@ -420,7 +420,7 @@ ui <- page_sidebar(
 
           while (window.measureQueue.length > 0 && window.audioQueueTime < now + 1.0) {
               let m = window.measureQueue.shift();
-              console.log("JSDBG shift nome=" + m.nome + " fim=" + m.fim_sequencia + " remaining=" + window.measureQueue.length + " aqt=" + window.audioQueueTime.toFixed(2) + " now=" + now.toFixed(2));
+              console.log(\"JSDBG shift nome=\" + m.nome + \" fim=\" + m.fim_sequencia + \" remaining=\" + window.measureQueue.length + \" aqt=\" + window.audioQueueTime.toFixed(2) + \" now=\" + now.toFixed(2));
               let m_next = window.measureQueue.length > 0 ? window.measureQueue[0] : m;
 
               scheduleMeasure(m, m_next, window.audioQueueTime);
@@ -442,7 +442,7 @@ ui <- page_sidebar(
       }
 
       window.finalizarSequencia = function() {
-          console.log("JSDBG finalizarSequencia CALLED");
+          console.log(\"JSDBG finalizarSequencia CALLED\");
           window.isPlaying = false; window.measureQueue = [];
           if (window.schedulerTimer) clearInterval(window.schedulerTimer);
           if (window.masterGain) window.masterGain.disconnect();
