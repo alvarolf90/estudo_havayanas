@@ -772,8 +772,11 @@ server <- function(input, output, session) {
     fase_atual = "Levada", padrao_atual = "", compassos_restantes = 0, compassos_tocados = 0,
     proxima_fase = "", proximo_padrao = "", proximos_compassos = 0,
     modo_sequencia = FALSE, sequencia_passos = list(), sequencia_indice = 1, sequencia_fim = FALSE, sequencia_nome = "",
-    passos_sequencia_editor = list()
+    passos_sequencia_editor = list(), sequencia_bpm = NULL, sequencia_instrumento = NULL
   )
+  
+  bpm_ativo <- function() if (isTRUE(estado$modo_sequencia)) estado$sequencia_bpm else input$bpm
+  instrumento_ativo <- function() if (isTRUE(estado$modo_sequencia)) estado$sequencia_instrumento else input$instrumento
   
   observe({
     req(input$vol_principal) 
@@ -920,7 +923,7 @@ server <- function(input, output, session) {
     fase_anterior <- estado$fase_atual; padrao_anterior <- estado$padrao_atual
     
     if (fase_anterior == "Convenção") {
-      df_c <- df_convencoes[df_convencoes$Convencao == estado$padrao_atual & df_convencoes$Instrumento == input$instrumento, ]
+      df_c <- df_convencoes[df_convencoes$Convencao == estado$padrao_atual & df_convencoes$Instrumento == instrumento_ativo(), ]
       col_forca <- if("Forca_Primeira_Nota" %in% colnames(df_c)) "Forca_Primeira_Nota" else if("Forca.Primeira.Nota" %in% colnames(df_c)) "Forca.Primeira.Nota" else NULL
       estado$nota_forcada <- if(!is.null(col_forca) && nrow(df_c) > 0 && !is.na(df_c[[col_forca]][1])) df_c[[col_forca]][1] else ""
     } else { 
@@ -992,7 +995,7 @@ server <- function(input, output, session) {
     
     if (estado$compassos_restantes <= 0) { avancar_fase(); preencher_proximo() }
     nf <- if (estado$compassos_tocados == 0) estado$nota_forcada else ""
-    insts_tocar <- if (isTRUE(estado$modo_sequencia)) input$instrumento else unique(c(input$instrumento, input$acompanhamento_ativo))
+    insts_tocar <- if (isTRUE(estado$modo_sequencia)) instrumento_ativo() else unique(c(input$instrumento, input$acompanhamento_ativo))
     strings_comp <- list(); str_variada <- "-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --"
     
     if (estado$padrao_atual == "Variada") {
@@ -1003,7 +1006,7 @@ server <- function(input, output, session) {
     }
     
     for (inst in insts_tocar) {
-      if (inst == input$instrumento) {
+      if (inst == instrumento_ativo()) {
         if (estado$padrao_atual == "Variada") { comp_str <- str_variada; if (estado$compassos_tocados == 0 && nf != "") comp_str <- sub("^\\S+", nf, trimws(comp_str))
         } else { comp_str <- processar_compasso(estado$padrao_atual, inst, estado$fase_atual, estado$compassos_tocados, estado$veio_de_convencao, nf) }
       } else {
@@ -1038,7 +1041,7 @@ server <- function(input, output, session) {
     img_atual <- map_imagens[[estado$padrao_atual]]; if(is.null(img_atual)) img_atual <- ""
     img_prox <- map_imagens[[estado$proximo_padrao]]; if(is.null(img_prox)) img_prox <- ""
     
-    res <- list(html = strings_comp[[input$instrumento]], strings = strings_comp, nome = estado$padrao_atual, 
+    res <- list(html = strings_comp[[instrumento_ativo()]], strings = strings_comp, nome = estado$padrao_atual, 
                 img = img_atual, restantes = estado$compassos_restantes, futuro = estado$proximo_padrao, futuro_img = img_prox,
                 fim_sequencia = FALSE)
     estado$compassos_restantes <- estado$compassos_restantes - 1; estado$compassos_tocados <- estado$compassos_tocados + 1
@@ -1115,11 +1118,11 @@ server <- function(input, output, session) {
       }
       
       payload <- list(
-        bpm = as.numeric(input$bpm), 
+        bpm = as.numeric(bpm_ativo()), 
         timbre = "Meus Sons (.wav)",
         volPrincipal = if (isTRUE(estado$modo_sequencia)) 1.0 else input$vol_principal / 100.0,
         volAcompMap = vol_map,
-        instPrincipal = input$instrumento, 
+        instPrincipal = instrumento_ativo(), 
         isLoop = if (isTRUE(estado$modo_sequencia)) FALSE else (length(input$levadas_ativas) + length(input$conv_ativas)) == 1,
         batch = gerar_lote_compassos(16)
       )
@@ -1226,6 +1229,8 @@ server <- function(input, output, session) {
     estado$sequencia_indice <- 1
     estado$sequencia_fim <- FALSE
     
+    estado$sequencia_bpm <- if (!is.null(seq$bpm)) as.numeric(seq$bpm) else 80
+    estado$sequencia_instrumento <- if (!is.null(seq$instrumento)) seq$instrumento else "Dobra"
     if (!is.null(seq$bpm)) updateSliderInput(session, "bpm", value = as.numeric(seq$bpm))
     if (!is.null(seq$instrumento)) updateSelectInput(session, "instrumento", selected = seq$instrumento)
     
