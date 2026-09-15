@@ -830,7 +830,6 @@ server <- function(input, output, session) {
   })
   
   reset_tudo <- function() {
-    cat("DEBUG_RESET_TUDO_CALLED\n")
     estado$rodando <- FALSE
     
     estado$padrao_atual <- ""
@@ -1047,21 +1046,20 @@ server <- function(input, output, session) {
                 fim_sequencia = FALSE)
     estado$compassos_restantes <- estado$compassos_restantes - 1; estado$compassos_tocados <- estado$compassos_tocados + 1
     preencher_proximo()
-    if (isTRUE(estado$modo_sequencia) && isTRUE(estado$sequencia_fim)) res$fim_sequencia <- TRUE
+    if (isTRUE(estado$modo_sequencia) && isTRUE(estado$sequencia_fim) && estado$compassos_restantes <= 0) res$fim_sequencia <- TRUE
     return(res)
   }
   
   gerar_lote_compassos <- function(qtd) {
     lote <- list()
     for (i in seq_len(qtd)) {
-      if (isTRUE(estado$modo_sequencia) && isTRUE(estado$sequencia_fim)) break
+      if (isTRUE(estado$modo_sequencia) && isTRUE(estado$sequencia_fim) && estado$compassos_restantes <= 0) break
       lote[[length(lote) + 1]] <- gerar_compasso_interno()
     }
     return(lote)
   }
   
   executar_play_toggle <- function() {
-    cat("DEBUG_TOGGLE_CALLED rodando_antes=", isTRUE(estado$rodando), "\n")
     id_botao <- if (isTRUE(estado$modo_sequencia)) "btn_play_seq" else "btn_play"
     
     if (!isTRUE(estado$modo_sequencia)) {
