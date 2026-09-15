@@ -830,6 +830,7 @@ server <- function(input, output, session) {
   })
   
   reset_tudo <- function() {
+    cat("DEBUG_RESET_TUDO_CALLED\n")
     estado$rodando <- FALSE
     
     estado$padrao_atual <- ""
@@ -1060,6 +1061,7 @@ server <- function(input, output, session) {
   }
   
   executar_play_toggle <- function() {
+    cat("DEBUG_TOGGLE_CALLED rodando_antes=", isTRUE(estado$rodando), "\n")
     id_botao <- if (isTRUE(estado$modo_sequencia)) "btn_play_seq" else "btn_play"
     
     if (!isTRUE(estado$modo_sequencia)) {
