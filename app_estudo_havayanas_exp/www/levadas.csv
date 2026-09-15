@@ -1,0 +1,151 @@
+﻿Levada;Instrumento;Compasso_1;Compasso_2;Compasso_3;Compasso_4;Duracao;Loop_C2
+Alujá;Caixa;PE ta LA | pe TA.TA LA | pe TA la | PE ta LA.LA;PE ta LA | pe TA.TA LA | pe TA la | PE ta LA.LA;PE ta LA | pe TA.TA LA | pe TA la | PE ta LA.LA;PE ta LA | pe TA.TA LA | pe TA la | PE ta LA.LA;;
+Alujá;Dobra;(pe) -- -- | -- -- -- | pe ta la | pe ta la;pe -- -- | -- -- -- | pe ta la | pe ta la;pe -- -- | -- -- -- | pe ta la | pe ta la;pe ta la | pe ta la | pe ta la | pe ta la;;
+Alujá;Fundo 1;(pe) -- -- | (pe) -- -- | (pe) -- -- | (pe) -- --;pe -- -- | pe -- -- | pe -- -- | pe -- --;pe -- -- | pe -- -- | pe -- -- | pe -- --;pe -- -- | pe -- -- | pe -- la | pe -- la;;
+Alujá;Fundo 2;(pe) -- -- | (pe) -- -- | (pe) -- -- | (pe) -- --;pe -- -- | pe -- -- | pe -- -- | pe -- --;pe -- -- | pe -- -- | pe -- -- | pe -- --;pe -- -- | pe -- -- | pe -- la | pe -- la;;
+Alujá;Repique;PE -- LA | -- TA.TA LA | -- TA -- | PE -- LA;PE -- LA | -- TA.TA LA | -- TA -- | PE -- LA;PE -- LA | -- TA.TA LA | -- TA -- | PE -- LA;PE -- LA | -- TA.TA LA | -- TA -- | PE -- LA;;
+Alujá;Xequerê;(pe) -- -- | (pe) -- -- | (pe) (ta) (la) | (pe) (ta) (la);pe -- -- | pe -- -- | pe ta la | pe ta la;pe -- -- | -- -- -- | pe ta la | pe ta la;pe ta la | pe ta la | pe ta la | pe ta la;;
+Funk 1;Dobra;pe -- -- -- | -- -- le -- | -- -- le -- | -- -- le co;pe -- -- -- | -- -- le -- | -- -- le -- | -- -- -- --;;;;
+Funk 1;Fundo 1;pe -- -- -- | -- -- le -- | -- -- le -- | -- -- -- --;pe -- -- -- | -- -- le -- | -- -- le -- | -- -- -- --;;;;
+Funk 1;Fundo 2;pe -- -- -- | -- -- le -- | -- -- le -- | -- -- -- --;pe -- -- -- | -- -- le -- | -- -- le -- | -- -- -- --;;;;
+Funk 1;Caixa;-- -- -- -- | pe -- -- -- | -- -- -- -- | pe -- -- --;-- -- -- -- | pe -- -- -- | -- -- -- -- | pe -- -- --;;;;
+Funk 1;Repique;-- -- -- -- | pe -- -- -- | -- -- -- -- | pe -- -- --;-- -- -- -- | pe -- -- -- | -- -- -- -- | pe -- -- --;;;;
+Funk 1;Xequerê;pe -- -- -- | pe -- le -- | -- -- le -- | pe -- -- --;pe -- -- -- | pe -- le -- | -- -- le -- | pe -- -- --;;;;
+Funk 2;Dobra;pe -- -- -- | -- -- -- -- | pe -- le -- | -- -- -- co;pe -- -- -- | -- -- -- -- | pe -- le -- | -- -- -- co;;;;
+Funk 2;Fundo 1;pe -- -- -- | -- -- -- -- | pe -- le -- | -- -- -- --;pe -- -- -- | -- -- -- -- | pe -- le -- | -- -- -- --;;;;
+Funk 2;Fundo 2;pe -- -- -- | -- -- -- -- | pe -- le -- | -- -- -- --;pe -- -- -- | -- -- -- -- | pe -- le -- | -- -- -- --;;;;
+Funk 2;Caixa;-- -- -- co | -- -- le -- | -- -- -- -- | pe -- -- --;-- -- -- co | -- -- le -- | -- -- -- -- | pe -- -- --;;;;
+Funk 2;Repique;-- -- -- co | -- -- le -- | -- -- -- -- | pe -- -- --;-- -- -- co | -- -- le -- | -- -- -- -- | pe -- -- --;;;;
+Funk 2;Xequerê;pe -- -- -- | pe -- le -- | -- -- le -- | pe -- -- --;pe -- -- -- | pe -- le -- | -- -- le -- | pe -- -- --;;;;
+Funk 3;Dobra;pe -- -- co | -- -- le -- | -- -- -- -- | -- -- le co;pe -- -- co | -- -- le -- | -- -- le -- | -- -- -- --;;;;
+Funk 3;Caixa;pe te le co | PE te le co | pe te le co | PE te le co;pe te le co | PE te le co | pe te le co | PE te le co;;;;
+Funk 3;Repique;-- -- -- -- | pe -- -- -- | -- -- -- -- | pe -- -- --;-- -- -- -- | pe -- -- -- | -- -- -- -- | pe -- -- --;;;;
+Funk 3;Fundo 1;pe -- -- co | -- -- le -- | -- -- -- -- | -- -- -- --;pe -- -- co | -- -- le -- | -- -- -- -- | -- -- -- --;;;;
+Funk 3;Fundo 2;pe -- -- co | -- -- le -- | -- -- -- -- | -- -- -- --;pe -- -- co | -- -- le -- | -- -- -- -- | -- -- -- --;;;;
+Funk 3;Xequerê;pe -- -- co | -- -- le -- | -- -- -- -- | pe -- -- --;pe -- -- co | -- -- le -- | -- -- -- -- | pe -- -- --;;;;
+Galope;Dobra;-- -- -- -- | -- -- le -- | -- -- -- -- | -- -- le --;-- -- -- -- | -- -- le -- | -- -- -- -- | -- -- le --;;;;
+Galope;Fundo 1;-- -- -- -- | pe -- -- -- | -- -- -- -- | pe -- -- --;-- -- -- -- | pe -- -- -- | -- -- -- -- | pe -- -- --;;;;
+Galope;Fundo 2;pe -- -- -- | -- -- -- -- | pe -- -- -- | -- -- -- --;pe -- -- -- | -- -- -- -- | pe -- -- -- | -- -- -- --;;;;
+Galope;Xequerê;pe -- -- -- | pe -- le -- | pe -- -- -- | pe -- le --;pe -- -- -- | pe -- le -- | pe -- -- -- | pe -- le --;;;;
+Galope;Caixa;pe -- -- co | -- -- le -- | -- -- le -- | pe -- -- --;pe -- -- co | -- -- le -- | -- -- le -- | pe -- -- --;;;;
+Galope;Repique;pe -- -- co | -- -- le -- | -- -- le -- | pe -- -- --;pe -- -- co | -- -- le -- | -- -- le -- | pe -- -- --;;;;
+Ijexá 1;Dobra;-- -- -- co | pe -- -- -- | -- -- -- co | pe -- -- --;-- -- -- co | pe -- -- -- | -- -- le -- | -- -- le --;;;;
+Ijexá 1;Caixa;PE te le co | PE te LE~ co | PE te le co | PE te LE~ co;PE te le co | PE te LE~ co | PE te le co | PE te LE~ co;;;;
+Ijexá 1;Fundo 1;-- -- -- -- | -- -- le -- | -- -- -- -- | -- -- le --;-- -- -- -- | -- -- le -- | -- -- -- -- | -- -- le --;;;;
+Ijexá 1;Fundo 2;-- -- -- -- | -- -- le -- | -- -- -- -- | -- -- le --;-- -- -- -- | -- -- le -- | -- -- -- -- | -- -- le --;;;;
+Ijexá 1;Repique;pe -- -- -- | pe -- -- -- | pe -- -- -- | pe -- -- --;pe -- -- -- | pe -- -- -- | pe -- -- -- | pe -- -- --;;;;
+Ijexá 1;Xequerê;pe -- -- -- | pe -- le -- | pe -- -- -- | pe -- le --;pe -- -- -- | pe -- le -- | pe -- -- -- | pe -- le --;;;;
+Ijexá 2;Dobra;-- -- -- co | pe -- le -- | -- -- -- co | pe -- le --;-- -- -- co | pe -- le -- | -- -- le -- | pe -- le --;;;;
+Ijexá 2;Caixa;PE te le CO | PE -- LE~ co | PE te le CO | PE -- LE~ co;PE te le CO | PE -- LE~ co | PE te le CO | PE -- LE~ co;;;;
+Ijexá 2;Fundo 1;-- -- -- -- | pe -- le -- | -- -- -- -- | pe -- le --;-- -- -- -- | pe -- le -- | -- -- -- -- | pe -- le --;;;;
+Ijexá 2;Fundo 2;-- -- -- -- | pe -- le -- | -- -- -- -- | pe -- le --;-- -- -- -- | pe -- le -- | -- -- -- -- | pe -- le --;;;;
+Ijexá 2;Repique;pe te -- co | -- -- -- -- | pe -- le -- | -- -- -- --;pe te -- co | -- -- -- -- | pe -- le -- | -- -- -- --;;;;
+Ijexá 2;Xequerê;pe -- le co | pe -- le co | pe -- le co | pe -- le co;pe -- le co | pe -- le co | pe -- le co | pe -- le co;;;;
+Lambada;Dobra;pe te -- -- | -- -- le -- | -- -- -- -- | -- -- le co;pe te -- -- | -- -- le -- | -- -- -- -- | -- -- le co;;;;
+Lambada;Caixa;PE te le CO | pe te le co | PE te le CO | pe te le co;PE te le CO | pe te le co | PE te le CO | pe te le co;;;;
+Lambada;Fundo 1;-- -- -- -- | pe -- -- -- | -- -- -- -- | pe -- -- --;-- -- -- -- | pe -- -- -- | -- -- -- -- | pe -- -- --;;;;
+Lambada;Fundo 2;pe -- -- -- | -- -- -- -- | pe -- -- -- | -- -- -- --;pe -- -- -- | -- -- -- -- | pe -- -- -- | -- -- -- --;;;;
+Lambada;Xequerê;pe -- -- co | -- -- le co | pe -- -- co | -- -- le co;pe -- -- co | -- -- le co | pe -- -- co | -- -- le co;;;;
+Lambada;Repique;PE -- -- CO | -- -- -- -- | PE -- -- CO | -- -- -- --;PE -- -- CO | -- -- -- -- | PE -- LE -- | PE -- -- --;;;;
+Pagodão;Dobra;pe -- -- -- | -- -- le -- | pe -- -- -- | -- -- le --;pe -- -- -- | -- -- le -- | pe -- le -- | -- -- le --;;;;
+Pagodão;Caixa;PE -- le -- | pe -- LE -- | pe -- le -- | PE -- le --;PE -- le -- | pe -- LE -- | pe -- le -- | PE -- le --;;;;
+Pagodão;Repique;PE -- le -- | pe -- LE -- | pe -- le -- | PE -- le --;PE -- le -- | pe -- LE -- | pe -- le -- | PE -- le --;;;;
+Pagodão;Fundo 1;pe* -- -- -- | -- -- le* -- | pe -- -- -- | -- -- le* --;pe* -- -- -- | -- -- le* -- | pe -- -- -- | -- -- le* --;;;;
+Pagodão;Fundo 2;pe* -- -- -- | -- -- le* -- | pe -- -- -- | -- -- le* --;pe* -- -- -- | -- -- le* -- | pe -- -- -- | -- -- le* --;;;;
+Pagodão;Xequerê;-- -- le -- | pe -- le -- | -- -- -- -- | -- -- -- --;-- -- le -- | pe -- le -- | -- -- -- -- | -- -- -- --;;;;
+Pe;Dobra;pe -- -- -- | pe -- -- -- | pe -- -- -- | pe -- -- --;pe -- -- -- | pe -- -- -- | pe -- -- -- | pe -- -- --;;;;
+Pe;Caixa;pe -- -- -- | pe -- -- -- | pe -- -- -- | pe -- -- --;pe -- -- -- | pe -- -- -- | pe -- -- -- | pe -- -- --;;;;
+Pe;Repique;pe -- -- -- | pe -- -- -- | pe -- -- -- | pe -- -- --;pe -- -- -- | pe -- -- -- | pe -- -- -- | pe -- -- --;;;;
+Pe;Fundo 1;pe -- -- -- | pe -- -- -- | pe -- -- -- | pe -- -- --;pe -- -- -- | pe -- -- -- | pe -- -- -- | pe -- -- --;;;;
+Pe;Fundo 2;pe -- -- -- | pe -- -- -- | pe -- -- -- | pe -- -- --;pe -- -- -- | pe -- -- -- | pe -- -- -- | pe -- -- --;;;;
+Pe;Xequerê;pe -- -- -- | pe -- -- -- | pe -- -- -- | pe -- -- --;pe -- -- -- | pe -- -- -- | pe -- -- -- | pe -- -- --;;;;
+Pe----Co;Dobra;pe -- -- co | pe -- -- co | pe -- -- co | pe -- -- co;pe -- -- co | pe -- -- co | pe -- -- co | pe -- -- co;;;;
+Pe----Co;Caixa;pe -- -- co | pe -- -- co | pe -- -- co | pe -- -- co;pe -- -- co | pe -- -- co | pe -- -- co | pe -- -- co;;;;
+Pe----Co;Fundo 1;pe -- -- co | pe -- -- co | pe -- -- co | pe -- -- co;pe -- -- co | pe -- -- co | pe -- -- co | pe -- -- co;;;;
+Pe----Co;Fundo 2;pe -- -- co | pe -- -- co | pe -- -- co | pe -- -- co;pe -- -- co | pe -- -- co | pe -- -- co | pe -- -- co;;;;
+Pe----Co;Repique;pe -- -- co | pe -- -- co | pe -- -- co | pe -- -- co;pe -- -- co | pe -- -- co | pe -- -- co | pe -- -- co;;;;
+Pe----Co;Xequerê;pe -- -- co | pe -- -- co | pe -- -- co | pe -- -- co;pe -- -- co | pe -- -- co | pe -- -- co | pe -- -- co;;;;
+Pe--LeCo;Dobra;pe -- le co | pe -- le co | pe -- le co | pe -- le co;pe -- le co | pe -- le co | pe -- le co | pe -- le co;;;;
+Pe--LeCo;Caixa;pe -- le co | pe -- le co | pe -- le co | pe -- le co;pe -- le co | pe -- le co | pe -- le co | pe -- le co;;;;
+Pe--LeCo;Fundo 1;pe -- le co | pe -- le co | pe -- le co | pe -- le co;pe -- le co | pe -- le co | pe -- le co | pe -- le co;;;;
+Pe--LeCo;Fundo 2;pe -- le co | pe -- le co | pe -- le co | pe -- le co;pe -- le co | pe -- le co | pe -- le co | pe -- le co;;;;
+Pe--LeCo;Repique;pe -- le co | pe -- le co | pe -- le co | pe -- le co;pe -- le co | pe -- le co | pe -- le co | pe -- le co;;;;
+Pe--LeCo;Xequerê;pe -- le co | pe -- le co | pe -- le co | pe -- le co;pe -- le co | pe -- le co | pe -- le co | pe -- le co;;;;
+PeLe;Dobra;pe -- le -- | pe -- le -- | pe -- le -- | pe -- le --;pe -- le -- | pe -- le -- | pe -- le -- | pe -- le --;;;;
+PeLe;Caixa;pe -- le -- | pe -- le -- | pe -- le -- | pe -- le --;pe -- le -- | pe -- le -- | pe -- le -- | pe -- le --;;;;
+PeLe;Repique;pe -- le -- | pe -- le -- | pe -- le -- | pe -- le --;pe -- le -- | pe -- le -- | pe -- le -- | pe -- le --;;;;
+PeLe;Fundo 1;pe -- le -- | pe -- le -- | pe -- le -- | pe -- le --;pe -- le -- | pe -- le -- | pe -- le -- | pe -- le --;;;;
+PeLe;Fundo 2;pe -- le -- | pe -- le -- | pe -- le -- | pe -- le --;pe -- le -- | pe -- le -- | pe -- le -- | pe -- le --;;;;
+PeLe;Xequerê;pe -- le -- | pe -- le -- | pe -- le -- | pe -- le --;pe -- le -- | pe -- le -- | pe -- le -- | pe -- le --;;;;
+PeTaLa;Dobra;pe ta la | pe ta la | pe ta la | pe ta la;pe ta la | pe ta la | pe ta la | pe ta la;;;;
+PeTaLa;Caixa;pe ta la | pe ta la | pe ta la | pe ta la;pe ta la | pe ta la | pe ta la | pe ta la;;;;
+PeTaLa;Repique;pe ta la | pe ta la | pe ta la | pe ta la;pe ta la | pe ta la | pe ta la | pe ta la;;;;
+PeTaLa;Fundo 1;pe ta la | pe ta la | pe ta la | pe ta la;pe ta la | pe ta la | pe ta la | pe ta la;;;;
+PeTaLa;Fundo 2;pe ta la | pe ta la | pe ta la | pe ta la;pe ta la | pe ta la | pe ta la | pe ta la;;;;
+PeTaLa;Xequerê;pe ta la | pe ta la | pe ta la | pe ta la;pe ta la | pe ta la | pe ta la | pe ta la;;;;
+PeTe--Co;Dobra;pe te -- co | pe te -- co | pe te -- co | pe te -- co;pe te -- co | pe te -- co | pe te -- co | pe te -- co;;;;
+PeTe--Co;Caixa;pe te -- co | pe te -- co | pe te -- co | pe te -- co;pe te -- co | pe te -- co | pe te -- co | pe te -- co;;;;
+PeTe--Co;Fundo 1;pe te -- co | pe te -- co | pe te -- co | pe te -- co;pe te -- co | pe te -- co | pe te -- co | pe te -- co;;;;
+PeTe--Co;Fundo 2;pe te -- co | pe te -- co | pe te -- co | pe te -- co;pe te -- co | pe te -- co | pe te -- co | pe te -- co;;;;
+PeTe--Co;Repique;pe te -- co | pe te -- co | pe te -- co | pe te -- co;pe te -- co | pe te -- co | pe te -- co | pe te -- co;;;;
+PeTe--Co;Xequerê;pe te -- co | pe te -- co | pe te -- co | pe te -- co;pe te -- co | pe te -- co | pe te -- co | pe te -- co;;;;
+PeTeLe--;Dobra;pe te le -- | pe te le -- | pe te le -- | pe te le --;pe te le -- | pe te le -- | pe te le -- | pe te le --;;;;
+PeTeLe--;Caixa;pe te le -- | pe te le -- | pe te le -- | pe te le --;pe te le -- | pe te le -- | pe te le -- | pe te le --;;;;
+PeTeLe--;Fundo 1;pe te le -- | pe te le -- | pe te le -- | pe te le --;pe te le -- | pe te le -- | pe te le -- | pe te le --;;;;
+PeTeLe--;Fundo 2;pe te le -- | pe te le -- | pe te le -- | pe te le --;pe te le -- | pe te le -- | pe te le -- | pe te le --;;;;
+PeTeLe--;Repique;pe te le -- | pe te le -- | pe te le -- | pe te le --;pe te le -- | pe te le -- | pe te le -- | pe te le --;;;;
+PeTeLe--;Xequerê;pe te le -- | pe te le -- | pe te le -- | pe te le --;pe te le -- | pe te le -- | pe te le -- | pe te le --;;;;
+PeTeLeCo;Dobra;pe te le co | pe te le co | pe te le co | pe te le co;pe te le co | pe te le co | pe te le co | pe te le co;;;;
+PeTeLeCo;Caixa;pe te le co | pe te le co | pe te le co | pe te le co;pe te le co | pe te le co | pe te le co | pe te le co;;;;
+PeTeLeCo;Repique;pe te le co | pe te le co | pe te le co | pe te le co;pe te le co | pe te le co | pe te le co | pe te le co;;;;
+PeTeLeCo;Fundo 1;pe te le co | pe te le co | pe te le co | pe te le co;pe te le co | pe te le co | pe te le co | pe te le co;;;;
+PeTeLeCo;Fundo 2;pe te le co | pe te le co | pe te le co | pe te le co;pe te le co | pe te le co | pe te le co | pe te le co;;;;
+PeTeLeCo;Xequerê;pe te le co | pe te le co | pe te le co | pe te le co;pe te le co | pe te le co | pe te le co | pe te le co;;;;
+Reggae;Repique;pe te LE co | pe te LE co | pe te LE co | pe TE.TE LE co;pe te LE co | pe te LE co | pe te LE co | pe TE.TE LE co;;;;
+Reggae;Caixa;pe te LE~ co | pe te LE~ co | pe te LE~ co | pe te LE~ co;pe te LE~ co | pe te LE~ co | pe te LE~ co | pe te LE~ co;;;;
+Reggae;Xequerê;-- -- le -- | -- -- le -- | -- -- le -- | pe te le --;-- -- le -- | -- -- le -- | -- -- le -- | pe te le --;;;;
+Reggae;Dobra;-- -- -- -- | pe te le -- | -- -- -- -- | pe te le --;-- -- -- -- | pe te le -- | -- -- le co | -- te le --;;;;
+Reggae;Fundo 1;pe -- -- -- | -- -- -- -- | pe -- -- -- | -- -- -- --;pe -- -- -- | -- -- -- -- | pe -- -- -- | -- -- -- --;;;;
+Reggae;Fundo 2;-- -- -- -- | pe -- -- -- | -- -- -- -- | pe -- -- --;-- -- -- -- | pe -- -- -- | -- -- -- -- | pe -- -- --;;;;
+Samba Duro;Dobra;(pe) -- -- -- | pe te le co | pe -- -- -- | pe te le co;pe -- -- -- | pe te le co | pe te le co | pe te le co;;;;
+Samba Duro;Caixa;PE te le CO | pe te LE co | PE te le CO | pe te LE co;PE te le CO | pe te LE co | PE te le CO | pe te LE co;;;;
+Samba Duro;Fundo 1;-- -- -- -- | pe -- -- -- | -- -- -- -- | pe -- -- --;-- -- -- -- | pe -- -- -- | -- -- -- -- | pe -- -- --;;;;
+Samba Duro;Fundo 2;pe -- -- -- | -- -- -- -- | pe -- -- -- | -- -- -- --;pe -- -- -- | -- -- -- -- | pe -- -- -- | -- -- -- --;;;;
+Samba Duro;Repique;pe TE le CO | pe te LE co | PE te le CO | pe te LE co;pe TE le CO | pe te LE co | PE te le CO | pe te LE co;;;;
+Samba Duro;Xequerê;pe te -- co | pe -- -- -- | pe te -- co | pe -- -- --;pe te -- co | pe -- -- -- | pe te -- co | pe -- -- --;;;;
+Samba Reggae;Dobra;(pe) -- -- -- | -- -- le -- | -- -- -- -- | pe te le co;pe -- -- -- | -- -- le -- | -- -- -- -- | pe te le co;;;;
+Samba Reggae;Caixa;pe te le~ co | pe te le~ co | pe te le~ co | pe te le~ co;pe te le~ co | pe te le~ co | pe te le~ co | pe te le~ co;;;;
+Samba Reggae;Fundo 1;pe -- -- -- | -- -- -- -- | pe -- -- -- | -- -- -- --;pe -- -- -- | -- -- -- -- | pe -- -- -- | -- -- -- --;;;;
+Samba Reggae;Fundo 2;-- -- -- -- | pe -- -- -- | -- -- -- -- | pe -- -- --;-- -- -- -- | pe -- -- -- | -- -- -- -- | pe -- -- --;;;;
+Samba Reggae;Repique;pe -- -- co | -- -- le -- | -- -- le -- | -- te -- --;pe -- -- co | -- -- le -- | -- -- le -- | -- te -- --;;;;
+Samba Reggae;Xequerê;pe -- le co | pe -- le co | pe -- le co | pe -- le co;pe -- le co | pe -- le co | pe -- le co | pe -- le co;;;;
+Swing 1;Repique;pe -- -- co | -- -- -- co | -- -- le -- | pe -- -- --;pe -- -- co | -- -- -- co | -- -- le -- | pe -- -- --;;;;Sim
+Swing 1;Caixa;-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;pe te LE~ co | pe te LE~ co | pe te LE~ co | pe te LE~ co;;;;Sim
+Swing 1;Xequerê;-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;-- -- le -- | pe -- le -- | -- -- le -- | pe -- le --;;;;Sim
+Swing 1;Dobra;-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- le --;-- -- -- -- | -- -- le -- | -- -- -- -- | -- -- le --;;;;Sim
+Swing 1;Fundo 1;-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;-- -- -- -- | pe -- -- -- | -- -- -- -- | pe -- -- --;;;;Sim
+Swing 1;Fundo 2;-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;pe -- -- -- | -- -- -- -- | pe -- -- -- | -- -- -- --;;;;Sim
+Swing 2;Repique;PE te le CO | pe te le CO | pe te LE co | PE te le co;PE te le CO | pe te le CO | pe te LE co | PE te le co;;;;Sim
+Swing 2;Caixa;-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;pe te LE~ co | pe te LE~ co | pe te LE~ co | pe te LE~ co;;;;Sim
+Swing 2;Xequerê;-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- le co;pe -- le -- | pe -- le co | pe -- le -- | pe -- le co;;;;Sim
+Swing 2;Dobra;-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- le co;-- -- -- -- | -- -- le co | -- -- -- -- | -- -- le co;;;;Sim
+Swing 2;Fundo 1;-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;-- -- -- -- | pe -- -- -- | -- -- -- -- | pe -- -- --;;;;Sim
+Swing 2;Fundo 2;-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;pe -- -- -- | -- -- -- -- | pe -- -- -- | -- -- -- --;;;;Sim
+Swing 3;Repique;-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;-- -- le -- | -- -- le -- | -- -- le -- | -- -- le --;;;;Sim
+Swing 3;Caixa;-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;(pe) (te) LE~ co | pe te LE~ co | pe te LE~ co | pe te LE~ co;;;;Sim
+Swing 3;Xequerê;-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;pe -- le co | pe -- le co | pe -- le co | pe -- le co;;;;Sim
+Swing 3;Dobra;pe -- -- co | -- -- -- co | -- -- le -- | pe -- -- --;pe -- -- co | -- -- -- co | -- -- le -- | pe -- -- --;;;;Sim
+Swing 3;Fundo 1;-- -- -- -- | -- -- -- -- | -- -- -- -- | pe -- le --;-- -- -- -- | pe -- le -- | -- -- -- -- | pe -- le --;;;;Sim
+Swing 3;Fundo 2;-- -- -- -- | -- -- -- -- | -- -- -- -- | pe -- le --;-- -- -- -- | pe -- le -- | -- -- -- -- | pe -- le --;;;;Sim
+Tamanquinho;Dobra;pe -- -- -- | -- -- -- -- | pe -- -- co | pe -- le co;pe -- -- -- | -- -- -- -- | pe -- -- co | pe -- le co;;;;
+Tamanquinho;Caixa;pe -- -- -- | pe -- -- co | -- te -- co | pe -- -- --;pe -- -- -- | pe -- -- co | -- te -- co -- | pe -- -- --;;;;
+Tamanquinho;Fundo 1;-- -- -- -- | pe -- -- -- | -- -- -- -- | pe -- -- --;-- -- -- -- | pe -- -- -- | -- -- -- -- | pe -- -- --;;;;
+Tamanquinho;Fundo 2;pe -- -- -- | -- -- -- -- | pe -- -- -- | -- -- -- --;pe -- -- -- | -- -- -- -- | pe -- -- -- | -- -- -- --;;;;
+Tamanquinho;Repique;pe.pe -- le co | pe -- le co | -- te -- co | pe -- -- --;pe.pe -- le co | pe -- le co | -- te -- co | pe -- -- --;;;;
+Tamanquinho;Xequerê;pe -- le co | pe -- -- -- | pe -- -- -- | pe -- -- --;pe -- le co | pe -- -- -- | pe -- -- -- | pe -- -- --;;;;
+TeLeCo;Dobra;-- te le co | -- te le co | -- te le co | -- te le co;-- te le co | -- te le co | -- te le co | -- te le co;;;;
+TeLeCo;Caixa;-- te le co | -- te le co | -- te le co | -- te le co;-- te le co | -- te le co | -- te le co | -- te le co;;;;
+TeLeCo;Fundo 1;-- te le co | -- te le co | -- te le co | -- te le co;-- te le co | -- te le co | -- te le co | -- te le co;;;;
+TeLeCo;Fundo 2;-- te le co | -- te le co | -- te le co | -- te le co;-- te le co | -- te le co | -- te le co | -- te le co;;;;
+TeLeCo;Repique;-- te le co | -- te le co | -- te le co | -- te le co;-- te le co | -- te le co | -- te le co | -- te le co;;;;
+TeLeCo;Xequerê;-- te le co | -- te le co | -- te le co | -- te le co;-- te le co | -- te le co | -- te le co | -- te le co;;;;
