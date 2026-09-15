@@ -176,14 +176,14 @@ ui <- page_sidebar(
 
       Shiny.addCustomMessageHandler('gerarLinkSequencia', function(seqObj) {
         var codigo = window.codificarSequencia(seqObj);
-        var base = window.location.origin + window.location.pathname;
+        var base = window.top.location.origin + window.top.location.pathname;
         var url = base + '#seq=' + codigo;
         var qr = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(url);
         Shiny.setInputValue('link_sequencia_gerado', {url: url, qr: qr}, {priority: 'event'});
       });
 
       function verificarSequenciaNaURL() {
-        var hash = window.location.hash;
+        var hash = window.top.location.hash;
         if (hash && hash.indexOf('#seq=') === 0) {
           try {
             var codigo = hash.substring(5);
