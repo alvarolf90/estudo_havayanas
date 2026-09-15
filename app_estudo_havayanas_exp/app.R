@@ -614,6 +614,12 @@ ui <- page_sidebar(
       id = "cabecalho_sequencia", style = "display: none; flex-direction: column; align-items: center; width: 100%; margin-bottom: 15px; padding: 10px;",
       h6("EXERCÍCIO", style = "color: #bdc3c7; font-weight: bold; letter-spacing: 2px; margin: 0 0 4px 0;"),
       h3(id = "titulo_sequencia_ativa", "-", style = "color: #5E2157; font-weight: 900; margin: 0 0 14px 0; text-align: center;"),
+      div(
+        id = "seq_opcoes_extra",
+        style = "display: flex; flex-direction: column; align-items: stretch; gap: 4px; width: 100%; max-width: 360px; margin-bottom: 14px; padding: 12px 16px; background-color: #f8f9fa; border-radius: 10px; border: 1px solid #e0e0e0;",
+        sliderInput("seq_bpm_control", "Velocidade (BPM):", min = 40, max = 150, value = 80, step = 5, width = "100%"),
+        checkboxGroupInput("seq_acompanhamento_ativo", "Tocar junto com:", choices = character(0), selected = character(0), inline = TRUE)
+      ),
       actionButton("btn_play_seq", "TOCAR", icon = icon("play-circle"), class = "btn-lg btn-primary", style = "font-size: 1.5rem; padding: 14px 40px; font-weight: 900;")
     ),
     
@@ -779,6 +785,11 @@ server <- function(input, output, session) {
   bpm_ativo <- function() if (isTRUE(estado$modo_sequencia)) estado$sequencia_bpm else input$bpm
   instrumento_ativo <- function() if (isTRUE(estado$modo_sequencia)) estado$sequencia_instrumento else input$instrumento
   
+  observeEvent(input$seq_bpm_control, {
+    req(isTRUE(estado$modo_sequencia))
+    estado$sequencia_bpm <- input$seq_bpm_control
+  })
+  
   observe({
     req(input$vol_principal) 
     vol_p <- input$vol_principal / 100.0
@@ -848,6 +859,7 @@ server <- function(input, output, session) {
     shinyjs::removeClass(id_botao, "btn-danger"); shinyjs::addClass(id_botao, "btn-primary")
     shinyjs::enable("bpm"); shinyjs::enable("rep_levadas"); shinyjs::enable("instrumento"); 
     shinyjs::enable("levadas_ativas"); shinyjs::enable("variada_opcoes"); shinyjs::enable("conv_ativas"); shinyjs::enable("acompanhamento_ativo")
+    shinyjs::enable("seq_bpm_control"); shinyjs::enable("seq_acompanhamento_ativo")
   }
   
   get_duracao <- function(padrao, df_conv) {
@@ -997,7 +1009,7 @@ server <- function(input, output, session) {
     
     if (estado$compassos_restantes <= 0) { avancar_fase(); preencher_proximo() }
     nf <- if (estado$compassos_tocados == 0) estado$nota_forcada else ""
-    insts_tocar <- if (isTRUE(estado$modo_sequencia)) instrumento_ativo() else unique(c(input$instrumento, input$acompanhamento_ativo))
+    insts_tocar <- if (isTRUE(estado$modo_sequencia)) unique(c(instrumento_ativo(), input$seq_acompanhamento_ativo)) else unique(c(input$instrumento, input$acompanhamento_ativo))
     strings_comp <- list(); str_variada <- "-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --"
     
     if (estado$padrao_atual == "Variada") {
@@ -1014,8 +1026,12 @@ server <- function(input, output, session) {
       } else {
         id_inst <- gsub(" ", "_", inst); ativas_l <- input[[paste0("acomp_lev_", id_inst)]]; ativas_c <- input[[paste0("acomp_conv_", id_inst)]]
         pode_tocar <- FALSE
-        if (estado$fase_atual == "Levada" && (estado$padrao_atual %in% ativas_l)) pode_tocar <- TRUE
-        if (estado$fase_atual == "Convenção" && (estado$padrao_atual %in% ativas_c)) pode_tocar <- TRUE
+        if (isTRUE(estado$modo_sequencia)) {
+          pode_tocar <- TRUE
+        } else {
+          if (estado$fase_atual == "Levada" && (estado$padrao_atual %in% ativas_l)) pode_tocar <- TRUE
+          if (estado$fase_atual == "Convenção" && (estado$padrao_atual %in% ativas_c)) pode_tocar <- TRUE
+        }
         if (pode_tocar) {
           if (estado$padrao_atual == "Variada") { comp_str <- str_variada; if (estado$compassos_tocados == 0 && nf != "") comp_str <- sub("^\\S+", nf, trimws(comp_str))
           } else { comp_str <- processar_compasso(estado$padrao_atual, inst, estado$fase_atual, estado$compassos_tocados, estado$veio_de_convencao, nf) }
@@ -1075,6 +1091,7 @@ server <- function(input, output, session) {
     if (estado$rodando) {
       shinyjs::disable("bpm"); shinyjs::disable("rep_levadas"); shinyjs::disable("instrumento");
       shinyjs::disable("levadas_ativas"); shinyjs::disable("variada_opcoes"); shinyjs::disable("conv_ativas"); shinyjs::disable("acompanhamento_ativo")
+      shinyjs::disable("seq_bpm_control"); shinyjs::disable("seq_acompanhamento_ativo")
       
       estado$veio_de_convencao <- TRUE; estado$nota_forcada <- ""
       
@@ -1116,6 +1133,10 @@ server <- function(input, output, session) {
           id_inst <- gsub(" ", "_", inst)
           val <- input[[paste0("vol_", id_inst)]]
           vol_map[[inst]] <- if(is.null(val)) 0.5 else (val / 100.0)
+        }
+      } else if (isTRUE(estado$modo_sequencia) && length(input$seq_acompanhamento_ativo) > 0) {
+        for (inst in input$seq_acompanhamento_ativo) {
+          vol_map[[inst]] <- 0.7
         }
       }
       
@@ -1236,6 +1257,9 @@ server <- function(input, output, session) {
     if (!is.null(seq$bpm)) updateSliderInput(session, "bpm", value = as.numeric(seq$bpm))
     if (!is.null(seq$instrumento)) updateSelectInput(session, "instrumento", selected = seq$instrumento)
     
+    updateSliderInput(session, "seq_bpm_control", value = estado$sequencia_bpm)
+    updateCheckboxGroupInput(session, "seq_acompanhamento_ativo", choices = setdiff(instrumentos_disponiveis, estado$sequencia_instrumento), selected = character(0))
+    
     shinyjs::hide("sidebar_principal")
     shinyjs::hide("seletor_modo")
     shinyjs::hide("cabecalho_livre")
@@ -1247,6 +1271,7 @@ server <- function(input, output, session) {
     estado$rodando <- FALSE
     shinyjs::enable("bpm"); shinyjs::enable("rep_levadas"); shinyjs::enable("instrumento")
     shinyjs::enable("levadas_ativas"); shinyjs::enable("variada_opcoes"); shinyjs::enable("conv_ativas"); shinyjs::enable("acompanhamento_ativo")
+    shinyjs::enable("seq_bpm_control"); shinyjs::enable("seq_acompanhamento_ativo")
     if (isTRUE(estado$modo_sequencia)) {
       updateActionButton(session, "btn_play_seq", label = "Tocar de novo", icon = icon("redo"))
     } else {
