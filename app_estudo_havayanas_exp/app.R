@@ -174,7 +174,6 @@ ui <- page_sidebar(
         return JSON.parse(json);
       };
 
-      Shiny.addCustomMessageHandler('debugLog', function(msg) { console.log('R_DEBUG: ' + msg); });
 
       Shiny.addCustomMessageHandler('gerarLinkSequencia', function(seqObj) {
         var codigo = window.codificarSequencia(seqObj);
@@ -347,7 +346,6 @@ ui <- page_sidebar(
           window.timbre = payload.timbre;
           window.instPrincipal = payload.instPrincipal; window.isLoop = payload.isLoop;
           window.measureQueue = payload.batch;
-          console.log(\"JSDBG startPlayback batchLen=\" + payload.batch.length + \" lastFim=\" + (payload.batch.length ? payload.batch[payload.batch.length-1].fim_sequencia : \"n/a\"));
           window.metadeAtiva = 1;
 
           let now = window.audioCtx.currentTime; let beatDur = 60.0 / window.bpm;
@@ -410,7 +408,7 @@ ui <- page_sidebar(
       });
 
 
-      Shiny.addCustomMessageHandler(\"appendBatch\", function(batch) { console.log(\"JSDBG appendBatch received len=\" + batch.length); window.measureQueue.push(...batch); });
+      Shiny.addCustomMessageHandler(\"appendBatch\", function(batch) { window.measureQueue.push(...batch); });
 
       function schedulerLoop() {
           if (!window.isPlaying) return;
@@ -420,7 +418,6 @@ ui <- page_sidebar(
 
           while (window.measureQueue.length > 0 && window.audioQueueTime < now + 1.0) {
               let m = window.measureQueue.shift();
-              console.log(\"JSDBG shift nome=\" + m.nome + \" fim=\" + m.fim_sequencia + \" remaining=\" + window.measureQueue.length + \" aqt=\" + window.audioQueueTime.toFixed(2) + \" now=\" + now.toFixed(2));
               let m_next = window.measureQueue.length > 0 ? window.measureQueue[0] : m;
 
               scheduleMeasure(m, m_next, window.audioQueueTime);
@@ -442,7 +439,6 @@ ui <- page_sidebar(
       }
 
       window.finalizarSequencia = function() {
-          console.log(\"JSDBG finalizarSequencia CALLED\");
           window.isPlaying = false; window.measureQueue = [];
           if (window.schedulerTimer) clearInterval(window.schedulerTimer);
           if (window.masterGain) window.masterGain.disconnect();
@@ -830,6 +826,7 @@ server <- function(input, output, session) {
   })
   
   observe({
+    if (isTRUE(estado$modo_sequencia)) return()
     if (length(input$levadas_ativas) > 0 || length(input$conv_ativas) > 0) { shinyjs::enable("btn_play") } 
     else { shinyjs::disable("btn_play"); if (estado$rodando) reset_tudo() }
   })
@@ -1046,7 +1043,6 @@ server <- function(input, output, session) {
     img_atual <- if (nzchar(estado$padrao_atual)) map_imagens[[estado$padrao_atual]] else NULL; if(is.null(img_atual)) img_atual <- ""
     img_prox <- if (nzchar(estado$proximo_padrao)) map_imagens[[estado$proximo_padrao]] else NULL; if(is.null(img_prox)) img_prox <- ""
     
-    session$sendCustomMessage("debugLog", paste("PRE-RES instrumento_ativo=[", instrumento_ativo(), "] names(strings_comp)=[", paste(names(strings_comp), collapse=","), "] insts_tocar=[", paste(insts_tocar, collapse=","), "] modo_seq=", isTRUE(estado$modo_sequencia), "] seq_instrumento=[", estado$sequencia_instrumento))
     res <- list(html = strings_comp[[instrumento_ativo()]], strings = strings_comp, nome = estado$padrao_atual, 
                 img = img_atual, restantes = estado$compassos_restantes, futuro = estado$proximo_padrao, futuro_img = img_prox,
                 fim_sequencia = FALSE)
