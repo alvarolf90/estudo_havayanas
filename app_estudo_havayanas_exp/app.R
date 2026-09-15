@@ -792,6 +792,7 @@ server <- function(input, output, session) {
   
   observe({
     req(input$vol_principal) 
+    if (isTRUE(estado$modo_sequencia)) return()
     vol_p <- input$vol_principal / 100.0
     
     vol_map <- list()
@@ -803,6 +804,17 @@ server <- function(input, output, session) {
       }
     }
     session$sendCustomMessage("updateVolume", list(p = vol_p, a = vol_map))
+  })
+  
+  observe({
+    req(isTRUE(estado$modo_sequencia))
+    vol_map <- list()
+    if (length(input$seq_acompanhamento_ativo) > 0) {
+      for (inst in input$seq_acompanhamento_ativo) {
+        vol_map[[inst]] <- 0.7
+      }
+    }
+    session$sendCustomMessage("updateVolume", list(p = 1.0, a = vol_map))
   })
   
   output$mixagem_acomp <- renderUI({
