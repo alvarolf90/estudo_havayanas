@@ -174,6 +174,8 @@ ui <- page_sidebar(
         return JSON.parse(json);
       };
 
+      Shiny.addCustomMessageHandler('debugLog', function(msg) { console.log('R_DEBUG: ' + msg); });
+
       Shiny.addCustomMessageHandler('gerarLinkSequencia', function(seqObj) {
         var codigo = window.codificarSequencia(seqObj);
         var base = window.top.location.origin + window.top.location.pathname;
@@ -1041,6 +1043,7 @@ server <- function(input, output, session) {
     img_atual <- if (nzchar(estado$padrao_atual)) map_imagens[[estado$padrao_atual]] else NULL; if(is.null(img_atual)) img_atual <- ""
     img_prox <- if (nzchar(estado$proximo_padrao)) map_imagens[[estado$proximo_padrao]] else NULL; if(is.null(img_prox)) img_prox <- ""
     
+    session$sendCustomMessage("debugLog", paste("PRE-RES instrumento_ativo=[", instrumento_ativo(), "] names(strings_comp)=[", paste(names(strings_comp), collapse=","), "] insts_tocar=[", paste(insts_tocar, collapse=","), "] modo_seq=", isTRUE(estado$modo_sequencia), "] seq_instrumento=[", estado$sequencia_instrumento))
     res <- list(html = strings_comp[[instrumento_ativo()]], strings = strings_comp, nome = estado$padrao_atual, 
                 img = img_atual, restantes = estado$compassos_restantes, futuro = estado$proximo_padrao, futuro_img = img_prox,
                 fim_sequencia = FALSE)
