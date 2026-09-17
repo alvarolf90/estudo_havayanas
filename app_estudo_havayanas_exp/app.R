@@ -676,7 +676,15 @@ ui <- page_sidebar(
             <rect x=\"40\" y=\"50\" width=\"60\" height=\"65\" rx=\"10\" fill=\"#34495e\" />
             <circle id=\"robo-led\" cx=\"70\" cy=\"85\" r=\"8\" fill=\"#bdc3c7\" />
             
-            <image href=\"cabeca.png\" x=\"20\" y=\"-30\" width=\"100\" height=\"80\" />
+            <rect id=\"antena-stick\" x=\"67\" y=\"6\" width=\"6\" height=\"10\" fill=\"#7f8c8d\" />
+            <circle id=\"antena-ball\" cx=\"70\" cy=\"6\" r=\"6\" fill=\"#EF6C00\" />
+            
+            <rect x=\"38\" y=\"15\" width=\"64\" height=\"35\" rx=\"14\" fill=\"#46637d\" />
+            <circle cx=\"55\" cy=\"32\" r=\"8\" fill=\"#ecf0f1\" />
+            <circle cx=\"85\" cy=\"32\" r=\"8\" fill=\"#ecf0f1\" />
+            <circle cx=\"55\" cy=\"32\" r=\"3.5\" fill=\"#2c3e50\" />
+            <circle cx=\"85\" cy=\"32\" r=\"3.5\" fill=\"#2c3e50\" />
+            <rect x=\"55\" y=\"43\" width=\"30\" height=\"5\" rx=\"2.5\" fill=\"#2c3e50\" />
           </svg>
           ")
         ),
