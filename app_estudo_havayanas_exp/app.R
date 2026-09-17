@@ -1143,6 +1143,15 @@ server <- function(input, output, session) {
           estado$padrao_atual <- sample(input$conv_ativas, 1)
           estado$compassos_restantes <- get_duracao(estado$padrao_atual, df_convencoes)
         }
+        
+        if (estado$fase_atual == "Levada" && tolower(estado$padrao_atual) == "pagodão") {
+          estado$proxima_fase <- "Levada"
+          estado$proximo_padrao <- estado$padrao_atual
+          estado$proximos_compassos <- estado$compassos_restantes
+          estado$fase_atual <- "Convenção"
+          estado$padrao_atual <- "Pausa"
+          estado$compassos_restantes <- 1
+        }
       }
       estado$compassos_tocados <- 0
       preencher_proximo()
