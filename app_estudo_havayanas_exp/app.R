@@ -1063,6 +1063,15 @@ server <- function(input, output, session) {
         tempos[length(tempos)] <- paste(notas, collapse = " ")
         comp_str <- paste(tempos, collapse = " | ")
       }
+      
+      if (estado$compassos_restantes == 1 && estado$padrao_atual == "Pausa" && tolower(estado$proximo_padrao) == "pagodão" && inst %in% c("Dobra", "Fundo 1", "Fundo 2")) {
+        tempos <- strsplit(comp_str, "\\|")[[1]]
+        if (length(tempos) >= 4) {
+          tempos[3] <- " -- -- le -- "
+          tempos[4] <- " pe -- le -- "
+          comp_str <- paste(tempos, collapse = "|")
+        }
+      }
       strings_comp[[inst]] <- comp_str
     }
     if (estado$compassos_tocados == 0) estado$nota_forcada <- "" 
