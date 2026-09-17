@@ -968,11 +968,7 @@ server <- function(input, output, session) {
     estado$fase_atual <- estado$proxima_fase
     estado$padrao_atual <- estado$proximo_padrao
     
-    if (estado$fase_atual == "Convenção") {
-      estado$compassos_restantes <- 1
-    } else {
-      estado$compassos_restantes <- estado$proximos_compassos
-    }
+    estado$compassos_restantes <- estado$proximos_compassos
     
     estado$compassos_tocados <- 0
     estado$proximo_padrao <- ""
@@ -1020,12 +1016,6 @@ server <- function(input, output, session) {
   }
   
   gerar_compasso_interno <- function() {
-    
-    if (exists("estado") && !is.null(estado$fase_atual) && estado$fase_atual == "Convenção") {
-      if (estado$compassos_restantes > 1) {
-        estado$compassos_restantes <- 1
-      }
-    }
     
     if (estado$compassos_restantes <= 0) { avancar_fase(); preencher_proximo() }
     nf <- if (estado$compassos_tocados == 0) estado$nota_forcada else ""
