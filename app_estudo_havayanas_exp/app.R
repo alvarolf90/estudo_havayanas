@@ -44,6 +44,7 @@ instrumentos_disponiveis <- unique(c(df_levadas$Instrumento, df_convencoes$Instr
 
 todos_padroes <- unique(c(levadas_disponiveis, convencoes_disponiveis))
 map_imagens <- sapply(todos_padroes, function(nome) {
+  if (nome == "Pausa") return("")
   nome_limpo <- limpar_nome_imagem(nome)
   return(paste0(nome_limpo, ".png"))
 }, USE.NAMES = TRUE)
