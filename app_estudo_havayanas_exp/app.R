@@ -369,6 +369,27 @@ ui <- page_sidebar(
                   });
               }
 
+              if (i === 2 && window.measureQueue[0] && window.measureQueue[0].nome.toLowerCase() === 'pagodão') {
+                  Object.keys(window.measureQueue[0].strings).forEach(inst => {
+                      if (inst === 'Dobra' || inst === 'Fundo 1' || inst === 'Fundo 2') {
+                          let t1 = beepTime + (beatDur * 0.5);
+                          let isP = (inst === window.instPrincipal);
+                          playSyntheticSound('le', t1, '1', inst, window.timbre, isP);
+                      }
+                  });
+              }
+              if (i === 3 && window.measureQueue[0] && window.measureQueue[0].nome.toLowerCase() === 'pagodão') {
+                  Object.keys(window.measureQueue[0].strings).forEach(inst => {
+                      if (inst === 'Dobra' || inst === 'Fundo 1' || inst === 'Fundo 2') {
+                          let t1 = beepTime;
+                          let t2 = beepTime + (beatDur * 0.5);
+                          let isP = (inst === window.instPrincipal);
+                          playSyntheticSound('pe', t1, '1', inst, window.timbre, isP);
+                          playSyntheticSound('le', t2, '1', inst, window.timbre, isP);
+                      }
+                  });
+              }
+
               setTimeout(() => {
                   $('#status_texto').text('Atenção, bateria...');
                   $('#conteudo_contador').html('<div class=\"contador-numero\">' + num + '</div>');
@@ -1144,14 +1165,6 @@ server <- function(input, output, session) {
           estado$compassos_restantes <- get_duracao(estado$padrao_atual, df_convencoes)
         }
         
-        if (estado$fase_atual == "Levada" && tolower(estado$padrao_atual) == "pagodão") {
-          estado$proxima_fase <- "Levada"
-          estado$proximo_padrao <- estado$padrao_atual
-          estado$proximos_compassos <- estado$compassos_restantes
-          estado$fase_atual <- "Convenção"
-          estado$padrao_atual <- "Pausa"
-          estado$compassos_restantes <- 1
-        }
       }
       estado$compassos_tocados <- 0
       preencher_proximo()
