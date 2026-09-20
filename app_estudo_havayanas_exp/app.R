@@ -73,8 +73,8 @@ ui <- page_sidebar(
     tags$style(HTML("
       body, .bslib-page-sidebar, .bslib-sidebar-layout > .main { background-color: #5E2157 !important; }
       .navbar { background-color: #EF6C00 !important; border-bottom: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-      .collapse-toggle { color: #EF6C00 !important; opacity: 1 !important; }
-      .collapse-toggle:hover { color: #FFA726 !important; }
+      .collapse-toggle { color: #FFFFFF !important; opacity: 1 !important; background-color: #EF6C00 !important; border-radius: 50% !important; box-shadow: 0 2px 8px rgba(0,0,0,0.35) !important; }
+      .collapse-toggle:hover { background-color: #FFA726 !important; }
       .sidebar { background-color: #FFFFFF !important; border-right: none !important; box-shadow: 2px 0 10px rgba(0,0,0,0.2); }
       .sidebar label, .sidebar h1, .sidebar h2, .sidebar h3, .sidebar h4, .sidebar h5, .sidebar h6 { color: #5E2157 !important; font-weight: bold; }
       .sidebar .accordion-button { color: #5E2157 !important; font-weight: bold; }
