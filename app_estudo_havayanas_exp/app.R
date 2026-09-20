@@ -51,6 +51,7 @@ map_imagens <- sapply(todos_padroes, function(nome) {
 
 arquivos_wav <- sapply(instrumentos_disponiveis, function(nome) {
   nome_limpo <- tolower(nome)
+  nome_limpo <- chartr("áàâãäéèêëíìîïóòôõöúùûüç", "aaaaaeeeeiiiiooooouuuuc", nome_limpo)
   nome_limpo <- iconv(nome_limpo, to = "ASCII//TRANSLIT")
   nome_limpo <- gsub("['\"~^`´]", "", nome_limpo)
   nome_limpo <- gsub("\\s+", "_", trimws(nome_limpo))
