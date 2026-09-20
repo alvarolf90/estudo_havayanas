@@ -594,9 +594,6 @@ ui <- page_sidebar(
     width = 340,
     open = list(desktop = "open", mobile = "closed"),
     
-    div(class = "btn-container", actionButton("btn_play", "Tocar", icon = icon("play-circle"), class = "btn-lg btn-primary", disabled = "TRUE")),
-    hr(),
-    
     sliderInput("bpm", "Velocidade (BPM):", min = 40, max = 150, value = 80, step = 5),
     sliderInput("rep_levadas", "Repetições das Levadas (mín - máx):", min = 4, max = 32, value = c(4, 8), step = 2),
     selectInput("instrumento", "Foco no Instrumento:", choices = instrumentos_disponiveis, selected = "Dobra"),
@@ -637,12 +634,16 @@ ui <- page_sidebar(
     class = "text-center", style = "display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 85vh;",
     div(
       id = "cabecalho_livre",
-      style = "display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 15px; padding: 0 10px;",
-      h4(id = "status_texto", "Pronto para o ensaio! Escolha as levadas e toque.", style = "color: #EF6C00 !important; font-weight: bold; margin: 0;"),
+      style = "display: flex; flex-direction: column; width: 100%; margin-bottom: 15px; padding: 0 10px; gap: 12px;",
       div(
-        actionButton("btn_toggle_leitura", " Modo Avançado", icon = icon("eye-slash"), class = "btn-sm btn-outline-secondary", style = "font-weight: bold; border-color: #bdc3c7; margin-right: 8px;"),
-        actionButton("btn_toggle_box_atual", " Ocultar Sinal Atual", icon = icon("eye-slash"), class = "btn-sm btn-outline-secondary", style = "font-weight: bold; border-color: #bdc3c7;")
-      )
+        style = "display: flex; justify-content: space-between; align-items: center; width: 100%;",
+        h4(id = "status_texto", "Pronto para o ensaio! Escolha as levadas e toque.", style = "color: #EF6C00 !important; font-weight: bold; margin: 0;"),
+        div(
+          actionButton("btn_toggle_leitura", " Modo Avançado", icon = icon("eye-slash"), class = "btn-sm btn-outline-secondary", style = "font-weight: bold; border-color: #bdc3c7; margin-right: 8px;"),
+          actionButton("btn_toggle_box_atual", " Ocultar Sinal Atual", icon = icon("eye-slash"), class = "btn-sm btn-outline-secondary", style = "font-weight: bold; border-color: #bdc3c7;")
+        )
+      ),
+      div(class = "btn-container", style = "margin-bottom: 0;", actionButton("btn_play", "Tocar", icon = icon("play-circle"), class = "btn-lg btn-primary", disabled = "TRUE"))
     ),
     div(
       id = "cabecalho_sequencia", style = "display: none; flex-direction: column; align-items: center; width: 100%; margin-bottom: 15px; padding: 10px;",
