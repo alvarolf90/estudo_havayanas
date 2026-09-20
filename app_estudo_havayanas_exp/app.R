@@ -638,6 +638,11 @@ ui <- page_sidebar(
       h6("EXERCÍCIO", style = "color: #bdc3c7; font-weight: bold; letter-spacing: 2px; margin: 0 0 4px 0;"),
       h3(id = "titulo_sequencia_ativa", "-", style = "color: #5E2157; font-weight: 900; margin: 0 0 14px 0; text-align: center;"),
       div(
+        style = "display: flex; gap: 8px; justify-content: center; margin-bottom: 10px;",
+        actionButton("btn_toggle_leitura_seq", " Modo Avançado", icon = icon("eye-slash"), class = "btn-sm btn-outline-secondary", style = "font-weight: bold; border-color: #bdc3c7;"),
+        actionButton("btn_toggle_box_atual_seq", " Ocultar Sinal Atual", icon = icon("eye-slash"), class = "btn-sm btn-outline-secondary", style = "font-weight: bold; border-color: #bdc3c7;")
+      ),
+      div(
         id = "seq_opcoes_extra",
         style = "display: flex; flex-direction: column; align-items: stretch; gap: 4px; width: 100%; max-width: 360px; margin-bottom: 14px; padding: 12px 16px; background-color: #f8f9fa; border-radius: 10px; border: 1px solid #e0e0e0;",
         sliderInput("seq_bpm_control", "Velocidade (BPM):", min = 40, max = 150, value = 80, step = 5, width = "100%"),
@@ -857,27 +862,36 @@ server <- function(input, output, session) {
     do.call(tagList, ui_list)
   })
   
-  observeEvent(input$btn_toggle_leitura, {
+  toggle_leitura <- function() {
     estado$exibir_leitura <- !estado$exibir_leitura
     if (estado$exibir_leitura) {
       updateActionButton(session, "btn_toggle_leitura", label = " Modo Avançado", icon = icon("eye-slash"))
+      updateActionButton(session, "btn_toggle_leitura_seq", label = " Modo Avançado", icon = icon("eye-slash"))
       shinyjs::show("box_leitura")
     } else {
       updateActionButton(session, "btn_toggle_leitura", label = " Mostrar Leitura", icon = icon("eye"))
+      updateActionButton(session, "btn_toggle_leitura_seq", label = " Mostrar Leitura", icon = icon("eye"))
       shinyjs::hide("box_leitura")
     }
-  })
+  }
   
-  observeEvent(input$btn_toggle_box_atual, {
+  toggle_box_atual <- function() {
     estado$exibir_box_atual <- !estado$exibir_box_atual
     if (estado$exibir_box_atual) {
       updateActionButton(session, "btn_toggle_box_atual", label = " Ocultar Sinal Atual", icon = icon("eye-slash"))
+      updateActionButton(session, "btn_toggle_box_atual_seq", label = " Ocultar Sinal Atual", icon = icon("eye-slash"))
       shinyjs::show("box_atual_container")
     } else {
       updateActionButton(session, "btn_toggle_box_atual", label = " Exibir Sinal Atual", icon = icon("eye"))
+      updateActionButton(session, "btn_toggle_box_atual_seq", label = " Exibir Sinal Atual", icon = icon("eye"))
       shinyjs::hide("box_atual_container")
     }
-  })
+  }
+  
+  observeEvent(input$btn_toggle_leitura, { toggle_leitura() })
+  observeEvent(input$btn_toggle_leitura_seq, { toggle_leitura() })
+  observeEvent(input$btn_toggle_box_atual, { toggle_box_atual() })
+  observeEvent(input$btn_toggle_box_atual_seq, { toggle_box_atual() })
   
   observe({
     if (isTRUE(estado$modo_sequencia)) return()
@@ -1280,6 +1294,10 @@ server <- function(input, output, session) {
           tags$label("Link do exercício (toque para copiar):", style = "font-weight: bold; font-size: 0.85em; display: block; margin-bottom: 4px;"),
           tags$input(type = "text", value = info$url, readonly = "readonly", onclick = "this.select(); document.execCommand('copy');",
                      style = "width: 100%; font-size: 0.72em; padding: 6px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; background: #fff;"),
+          div(style = "display: flex; justify-content: center; margin-bottom: 10px;",
+              tags$a(icon("up-right-from-square"), " Abrir em nova aba", href = info$url, target = "_blank", rel = "noopener noreferrer",
+                     class = "btn btn-sm btn-outline-primary", style = "font-weight: bold;")
+          ),
           div(style = "text-align: center;", tags$img(src = info$qr, style = "max-width: 180px; border-radius: 8px; border: 1px solid #eee;"))
       )
     })
