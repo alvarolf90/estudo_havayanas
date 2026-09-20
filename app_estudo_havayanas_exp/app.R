@@ -1357,6 +1357,7 @@ server <- function(input, output, session) {
   observeEvent(input$ir_modo_montar, {
     if (isTRUE(estado$rodando)) reset_tudo()
     shinyjs::hide("sidebar_principal")
+    shinyjs::runjs('$(".collapse-toggle").hide();')
     shinyjs::hide("tela_ensaio_livre")
     shinyjs::show("tela_montar_sequencia")
     shinyjs::addClass("ir_modo_montar", "btn-modo-ativo")
@@ -1366,6 +1367,7 @@ server <- function(input, output, session) {
   observeEvent(input$ir_modo_livre, {
     if (isTRUE(estado$rodando)) reset_tudo()
     shinyjs::show("sidebar_principal")
+    shinyjs::runjs('$(".collapse-toggle").show();')
     shinyjs::show("tela_ensaio_livre")
     shinyjs::hide("tela_montar_sequencia")
     shinyjs::addClass("ir_modo_livre", "btn-modo-ativo")
