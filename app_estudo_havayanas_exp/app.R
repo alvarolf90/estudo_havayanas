@@ -86,8 +86,8 @@ ui <- page_sidebar(
       .btn-modo-tab.btn-modo-ativo { background-color: white; color: #5E2157; }
       
       .painel-condutor { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: stretch; gap: 15px; width: 100%; margin-bottom: 15px; min-height: 260px; }
-      .box-atual { border: 2px solid #bdc3c7; border-radius: 12px; padding: 15px; flex: 1 1 20%; min-width: 150px; min-height: 200px; background: #f8f9fa; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); transition: opacity 0.3s ease; }
-      .box-proximo { border: 4px solid #EF6C00; border-radius: 12px; padding: 15px; flex: 1 1 35%; min-width: 250px; min-height: 200px; background: white; box-shadow: 0 8px 20px rgba(239,108,0,0.15); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; transition: box-shadow 0.3s ease; }
+      .box-atual { border: 2px solid #bdc3c7; border-radius: 12px; padding: 15px; flex: 1 1 20%; min-width: 150px; min-height: 220px; background: #f8f9fa; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); transition: opacity 0.3s ease; }
+      .box-proximo { border: 4px solid #EF6C00; border-radius: 12px; padding: 15px; flex: 1 1 35%; min-width: 250px; min-height: 220px; background: white; box-shadow: 0 8px 20px rgba(239,108,0,0.15); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; transition: box-shadow 0.3s ease; }
       .box-contagem { border: 4px solid #5E2157; border-radius: 12px; padding: 15px; flex: 1 1 35%; min-width: 250px; background: white; box-shadow: 0 8px 20px rgba(94,33,87,0.15); display: flex; flex-direction: column; align-items: center; justify-content: center; }
       
       .contador-numero { font-size: clamp(5rem, 8vw, 7.5rem); font-weight: 900; color: #5E2157; line-height: 1; text-shadow: 2px 2px 5px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; height: auto; }
@@ -101,7 +101,7 @@ ui <- page_sidebar(
 
       @media (max-width: 768px) {
         .painel-condutor { flex-direction: column; }
-        .box-atual, .box-proximo, .box-contagem { width: 100% !important; min-height: 200px; }
+        .box-atual, .box-proximo, .box-contagem { width: 100% !important; min-height: 220px; }
         .contador-numero { height: 120px; }
       }
     ")),
@@ -415,7 +415,7 @@ ui <- page_sidebar(
                   let n = window.measureQueue[0];
                   let iH = n && n.img ? '<img src=\"' + n.img + '\" style=\"max-height: 90px; max-width: 100%; object-fit: contain;\">' : '<div style=\"height: 90px;\"></div>';
                   
-                  $('#box_proximo_container').html('<div style=\"opacity:1; display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%;\"><h6 class=\"piscar\" style=\"color:#EF6C00; font-weight:bold; margin:0;\">ATENÇÃO BATERIA: PREPARA</h6><h2 style=\"font-size: 1.8rem; color: #5E2157; font-weight: 900; margin: 2px 0;\">' + (n ? n.nome : '-') + '</h2><div style=\"height: 100px; display: flex; align-items: center; justify-content: center; width: 100%;\">' + iH + '</div></div>');
+                  $('#box_proximo_container').html('<div style=\"opacity:1; display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%;\"><h6 class=\"piscar\" style=\"color:#EF6C00; font-weight:bold; margin:0; min-height:40px; display:flex; align-items:center; justify-content:center; line-height:1.2;\">ATENÇÃO BATERIA: PREPARA</h6><h2 style=\"font-size: 1.8rem; color: #5E2157; font-weight: 900; margin: 2px 0;\">' + (n ? n.nome : '-') + '</h2><div style=\"height: 100px; display: flex; align-items: center; justify-content: center; width: 100%;\">' + iH + '</div></div>');
               }, Math.max(0, (beepTime - window.audioCtx.currentTime) * 1000));
           }
 
@@ -496,7 +496,7 @@ ui <- page_sidebar(
                                   let iH = m.futuro_img ? '<img src=\"'+m.futuro_img+'\" style=\"max-height: 90px; max-width: 100%; object-fit: contain;\">' : '<div style=\"height: 90px;\"></div>';
                                   
                                   $('#conteudo_contador').html('<div class=\"contador-numero texto-desfoque\">-</div>');
-                                  $('#box_proximo_container').html('<div style=\"display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%;\"><h6 class=\"piscar\" style=\"color: #EF6C00; font-weight: bold; margin: 0; min-height: 20px;\">ATENÇÃO BATERIA: PREPARA</h6><h2 style=\"font-size: 1.8rem; color: #5E2157; font-weight: 900; text-align: center; margin: 2px 0; min-height: 35px;\">' + (m.futuro || '-') + '</h2><div style=\"height: 100px; display: flex; align-items: center; justify-content: center; width: 100%;\">' + iH + '</div></div>').css('box-shadow', '0 8px 30px rgba(239,108,0,0.5)');
+                                  $('#box_proximo_container').html('<div style=\"display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%;\"><h6 class=\"piscar\" style=\"color: #EF6C00; font-weight: bold; margin: 0; min-height: 40px; display: flex; align-items: center; justify-content: center; line-height: 1.2;\">ATENÇÃO BATERIA: PREPARA</h6><h2 style=\"font-size: 1.8rem; color: #5E2157; font-weight: 900; text-align: center; margin: 2px 0; min-height: 35px;\">' + (m.futuro || '-') + '</h2><div style=\"height: 100px; display: flex; align-items: center; justify-content: center; width: 100%;\">' + iH + '</div></div>').css('box-shadow', '0 8px 30px rgba(239,108,0,0.5)');
                                 } else {
                                   $('#conteudo_contador').html('<div class=\"contador-numero texto-desfoque\">-</div>');
                                   $('#box_proximo_container').html('<div style=\"display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; opacity: 0.3;\"><h2 style=\"font-size: 1.8rem; color: #5E2157; font-weight: 900; margin: 0;\">-</h2><div style=\"position: absolute; color: #bdc3c7; font-weight: bold; font-style: italic; font-size: 1.3rem;\">MANTÉM...</div></div>').css('box-shadow', '0 8px 20px rgba(239,108,0,0.05)');
