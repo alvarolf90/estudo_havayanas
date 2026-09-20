@@ -100,9 +100,17 @@ ui <- page_sidebar(
       .acomp-panel { margin-top: 15px; padding: 12px; border-left: 4px solid #EF6C00; background-color: #fcfcfc; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
       @media (max-width: 768px) {
+        .card-body { width: 100% !important; max-width: 100%; box-sizing: border-box; }
+        .main { overflow-anchor: none; }
         .painel-condutor { flex-direction: column; }
-        .box-atual, .box-proximo, .box-contagem { width: 100% !important; min-height: 220px; }
+        .linha-superior, .linha-inferior { flex-direction: column; }
+        .box-atual, .box-proximo, .box-contagem { width: 100% !important; min-width: 0; min-height: 220px; }
+        #robo_maestro { align-self: center; width: auto; }
         .contador-numero { height: 120px; }
+        #cabecalho_livre { flex-wrap: wrap; justify-content: center !important; gap: 10px; text-align: center; }
+        #cabecalho_livre > div { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px !important; }
+        #cabecalho_livre .btn { margin-right: 0 !important; }
+        #cabecalho_sequencia > div[style*='justify-content: center'] { flex-wrap: wrap; }
       }
     ")),
     
@@ -582,6 +590,7 @@ ui <- page_sidebar(
   sidebar = sidebar(
     id = "sidebar_principal",
     width = 340,
+    open = list(desktop = "open", mobile = "closed"),
     
     div(class = "btn-container", actionButton("btn_play", "Tocar", icon = icon("play-circle"), class = "btn-lg btn-primary", disabled = "TRUE")),
     hr(),
@@ -658,6 +667,7 @@ ui <- page_sidebar(
       
       # Linha Superior: Tocando e Próximo
       div(
+        class = "linha-superior",
         style = "display: flex; gap: 15px; width: 100%;",
         div(
           class = "box-atual", id = "box_atual_container", style = "flex: 1;",
@@ -673,6 +683,7 @@ ui <- page_sidebar(
       
       # Linha Inferior: Robô Maestro (à esquerda) e Caixa de Contagem Quadrada (à direita)
       div(
+        class = "linha-inferior",
         style = "display: flex; gap: 15px; width: 100%; align-items: stretch;",
         
         # Robô Centralizado
