@@ -935,8 +935,9 @@ server <- function(input, output, session) {
   
   get_duracao <- function(padrao, df_conv) {
     if ("Duracao" %in% colnames(df_conv)) {
-      dur <- df_conv$Duracao[df_conv$Convencao == padrao][1]
-      if (!is.na(dur) && !is.null(dur)) return(as.numeric(dur))
+      durs <- df_conv$Duracao[df_conv$Convencao == padrao]
+      durs <- durs[!is.na(durs) & trimws(as.character(durs)) != ""]
+      if (length(durs) > 0) return(as.numeric(durs[1]))
     }
     
     c2_str <- NULL
