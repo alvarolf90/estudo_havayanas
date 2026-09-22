@@ -92,3 +92,33 @@ Pausa;Xequerê;-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;;;;1;
 Pausa;Dobra;-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;;;;1;
 Pausa;Fundo 1;-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;;;;1;
 Pausa;Fundo 2;-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;;;;1;
+Conv. Soquinho;Dobra;pe -- -- -- | pe -- -- -- | pe -- -- -- | pe -- -- --;pe -- -- -- | -- -- -- -- | -- -- le -- | pe -- le --;-- -- le -- |pe -- -- -- | pe -- le -- | -- -- le --;;3;
+Conv. Soquinho;Caixa;-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --;-- -- -- -- | pe te le co | pe -- -- -- | -- -- -- --;pe -- -- -- | -- -- le -- | -- -- -- -- | pe -- -- --;;;
+Conv. Soquinho;Xequerê;;;;;;
+Conv. Soquinho;Repique;;;;;;
+Conv. Soquinho;Fundo 1;;;;;;
+Conv. Soquinho;Fundo 2;;;;;;
+Conv. Abençoada 1;Dobra;-- -- le co | pe -- -- -- | pe te le -- | -- -- -- --;;;;1;
+Conv. Abençoada 1;Caixa;pe -- -- -- | -- -- le -- | -- -- -- -- | pe -- -- --;;;;1;
+Conv. Abençoada 1;Xequerê;pe -- -- -- | -- -- le -- | -- -- -- -- | pe -- -- --;;;;1;
+Conv. Abençoada 1;Repique;pe -- -- -- | -- -- le -- | -- -- -- -- | pe -- -- --;;;;1;
+Conv. Abençoada 1;Fundo 1;-- -- le co | pe -- -- -- | pe te le -- | -- -- -- --;;;;1;
+Conv. Abençoada 1;Fundo 2;-- -- le co | pe -- -- -- | pe te le -- | -- -- -- --;;;;1;
+Conv. Abençoada 2;Dobra;pe -- -- -- | -- -- le -- | -- -- -- -- | -- -- -- --;;;;1;
+Conv. Abençoada 2;Caixa;-- -- le co | pe -- -- -- | pe te le co | pe -- -- --;;;;1;
+Conv. Abençoada 2;Xequerê;pe -- -- -- -- | -- -- -- -- | pe te le co | pe -- -- --;;;;1;
+Conv. Abençoada 2;Repique;-- -- le co | pe -- -- -- | pe te le co | pe -- -- --;;;;1;
+Conv. Abençoada 2;Fundo 1;pe -- -- -- | -- -- le -- | -- -- -- -- | -- -- -- --;;;;1;
+Conv. Abençoada 2;Fundo 2;pe -- -- -- | -- -- le -- | -- -- -- -- | -- -- -- --;;;;1;
+Conv. V1;Dobra;pe -- -- -- | -- -- -- -- | -- -- le -- | -- -- le --;;;;1;pe
+Conv. V1;Caixa;pe -- -- -- | -- -- -- -- | -- -- le -- | -- -- le --;;;;1;pe
+Conv. V1;Xequerê;pe -- -- -- | -- -- -- -- | -- -- le -- | -- -- le --;;;;1;pe
+Conv. V1;Repique;pe -- -- -- | -- -- -- -- | -- -- le -- | -- -- le --;;;;1;pe
+Conv. V1;Fundo 1;pe -- -- -- | -- -- -- -- | -- -- le -- | -- -- le --;;;;1;pe
+Conv. V1;Fundo 2;pe -- -- -- | -- -- -- -- | -- -- le -- | -- -- le --;;;;1;pe
+Conv. V2;Dobra;pe te -- -- | -- -- -- -- | -- -- -- co | pe te le co;;;;1;pe
+Conv. V2;Caixa;-- -- -- -- | pe.pe -- -- -- | -- -- -- -- | -- -- -- --;;;;1;pe
+Conv. V2;Xequerê;-- -- -- -- | pe -- -- -- | -- -- -- -- | -- -- -- --;;;;1;pe
+Conv. V2;Repique;-- -- -- -- | pe.pe -- -- -- | -- -- -- -- | -- -- -- --;;;;1;pe
+Conv. V2;Fundo 1;pe te -- -- | -- -- -- -- | -- -- -- co | pe te le co;;;;1;pe
+Conv. V2;Fundo 2;pe te -- -- | -- -- -- -- | -- -- -- co | pe te le co;;;;1;pe
