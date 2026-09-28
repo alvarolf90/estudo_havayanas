@@ -79,25 +79,25 @@ ui <- page_sidebar(
       .sidebar label, .sidebar h1, .sidebar h2, .sidebar h3, .sidebar h4, .sidebar h5, .sidebar h6 { color: #5E2157 !important; font-weight: bold; }
       .sidebar .accordion-button { color: #5E2157 !important; font-weight: bold; }
       .sidebar .accordion-button:not(.collapsed) { background-color: #FFF3E0 !important; color: #EF6C00 !important; }
-      .card { background-color: #FFFFFF !important; border: none; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border-radius: 16px; margin: 15px;}
+      .card { background-color: #FFFFFF !important; border: none; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border-radius: 16px; margin: 10px;}
       .btn-primary { background-color: #EF6C00 !important; border-color: #EF6C00 !important; color: white !important; }
       .btn-primary:hover { background-color: #E65C00 !important; }
       .btn-container { display: flex; width: 100%; margin-bottom: 10px;}
-      .btn-container > button { flex: 1; font-weight: bold; min-height: 52px; touch-action: manipulation; }
+      .btn-container > button { flex: 1; font-weight: bold; min-height: 44px; touch-action: manipulation; }
       .btn-modo-tab { background-color: rgba(255,255,255,0.15); color: white; border: 2px solid white; font-weight: bold; padding: 10px 22px; border-radius: 30px; }
       .btn-modo-tab.btn-modo-ativo { background-color: white; color: #5E2157; }
       
-      .painel-condutor { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: stretch; gap: 15px; width: 100%; margin-bottom: 15px; min-height: 260px; }
-      .box-atual { border: 2px solid #bdc3c7; border-radius: 12px; padding: 15px; flex: 1 1 20%; min-width: 150px; min-height: 220px; background: #f8f9fa; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); transition: opacity 0.3s ease; }
-      .box-proximo { border: 4px solid #EF6C00; border-radius: 12px; padding: 15px; flex: 1 1 35%; min-width: 250px; min-height: 220px; background: white; box-shadow: 0 8px 20px rgba(239,108,0,0.15); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; transition: box-shadow 0.3s ease; }
+      .painel-condutor { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: stretch; gap: 10px; width: 100%; margin-bottom: 10px; min-height: 170px; }
+      .box-atual { border: 2px solid #bdc3c7; border-radius: 12px; padding: 10px; flex: 1 1 20%; min-width: 150px; min-height: 150px; background: #f8f9fa; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); transition: opacity 0.3s ease; }
+      .box-proximo { border: 4px solid #EF6C00; border-radius: 12px; padding: 10px; flex: 1 1 35%; min-width: 250px; min-height: 150px; background: white; box-shadow: 0 8px 20px rgba(239,108,0,0.15); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; transition: box-shadow 0.3s ease; }
       .box-contagem { border: 4px solid #5E2157; border-radius: 12px; padding: 15px; flex: 1 1 35%; min-width: 250px; background: white; box-shadow: 0 8px 20px rgba(94,33,87,0.15); display: flex; flex-direction: column; align-items: center; justify-content: center; }
       
-      .contador-numero { font-size: clamp(5rem, 8vw, 7.5rem); font-weight: 900; color: #5E2157; line-height: 1; text-shadow: 2px 2px 5px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; height: auto; }
+      .contador-numero { font-size: clamp(2.2rem, 4vw, 3.5rem); font-weight: 900; color: #5E2157; line-height: 1; text-shadow: 2px 2px 5px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; height: auto; }
       .texto-desfoque { opacity: 0.25; filter: grayscale(100%); }
       @keyframes blinker { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
       .piscar { animation: blinker 1s linear infinite; }
       
-      #texto_peteleco { font-size: clamp(14px, 1.8vw, 24px); font-family: monospace; font-weight: bold; color: #2c3e50; line-height: 1.6; text-align: center; padding: 0; margin: 0; min-height: 70px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+      #texto_peteleco { font-size: clamp(14px, 1.8vw, 24px); font-family: monospace; font-weight: bold; color: #2c3e50; line-height: 1.3; text-align: center; padding: 0; margin: 0; min-height: 50px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
       .span-tempo { transition: color 0.1s ease-in-out; display: inline-block; border-radius: 4px; }
       .acomp-panel { margin-top: 15px; padding: 12px; border-left: 4px solid #EF6C00; background-color: #fcfcfc; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
@@ -108,7 +108,7 @@ ui <- page_sidebar(
         .linha-superior, .linha-inferior { flex-direction: column; }
         .box-atual, .box-proximo, .box-contagem { width: 100% !important; min-width: 0; min-height: 220px; }
         #robo_maestro { align-self: center; width: auto; }
-        .contador-numero { height: 120px; }
+        .contador-numero { height: 120px; font-size: clamp(5rem, 15vw, 6rem) !important; }
         #cabecalho_livre { flex-wrap: wrap; justify-content: center !important; gap: 10px; text-align: center; }
         #cabecalho_livre > div { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px !important; }
         #cabecalho_livre .btn { margin-right: 0 !important; }
@@ -137,19 +137,36 @@ ui <- page_sidebar(
       window.sampleBuffers = {};
       window.wavMap = ", map_wav_js, ";
 
-      window.playSample = function(buffer, time, vol, isSeca) {
+      window.playSample = function(buffer, time, vol, isSeca, isGrave) {
         const source = window.audioCtx.createBufferSource();
         source.buffer = buffer;
         const gainNode = window.audioCtx.createGain();
         gainNode.gain.setValueAtTime(vol, time);
 
         if (isSeca) {
-          gainNode.gain.setValueAtTime(vol, time + 0.02);
-          gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
-          source.connect(gainNode);
+          // Nota fechada/abafada: em vez de so cortar o som na marra (o que soa
+          // como um clique), simula o abafamento de verdade - um filtro passa-baixa
+          // que fecha rapido (tira o brilho/ressonancia, como uma mao abafando o
+          // couro) junto com uma queda de volume um pouco mais suave.
+          const filtro = window.audioCtx.createBiquadFilter();
+          filtro.type = 'lowpass';
+          filtro.Q.value = 0.7;
+          let freqAberta = 10000;
+          let freqFechada = isGrave ? 300 : 900;
+          let tempoFiltro = isGrave ? 0.05 : 0.025;
+          filtro.frequency.setValueAtTime(freqAberta, time);
+          filtro.frequency.exponentialRampToValueAtTime(freqFechada, time + tempoFiltro);
+
+          let rampAte = isGrave ? 0.16 : 0.08;
+          let paraEm = isGrave ? 0.2 : 0.1;
+          gainNode.gain.setValueAtTime(vol, time);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, time + rampAte);
+
+          source.connect(filtro);
+          filtro.connect(gainNode);
           gainNode.connect(window.masterGain);
           source.start(time);
-          source.stop(time + 0.06);
+          source.stop(time + paraEm);
         } else {
           source.connect(gainNode);
           gainNode.connect(window.masterGain);
@@ -225,7 +242,7 @@ ui <- page_sidebar(
 
         $('#status_texto').text('Pronto para o ensaio! Escolha as levadas e toque.');
         $('#nome_padrao_atual').text('-');
-        $('#imagem_sinal_atual').html('<div style=\"height: 80px;\">-</div>');
+        $('#imagem_sinal_atual').html('<div style=\"height: 55px;\">-</div>');
         $('#conteudo_contador').html('<div class=\"contador-numero texto-desfoque\">-</div>');
         $('#box_proximo_container').html('<div style=\"display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; opacity: 0.3;\"><h2 style=\"font-size: 1.8rem; color: #5E2157; font-weight: 900; margin: 0;\">-</h2></div>');
         $('#texto_peteleco').html('Nenhum sinal ativo no momento.');
@@ -242,7 +259,7 @@ ui <- page_sidebar(
         if (isSeca) { dur = 0.03; vol = vol * 0.9; }
         if (isGrave) {
           const osc = window.audioCtx.createOscillator(); const gain = window.audioCtx.createGain();
-          osc.type = 'sine'; osc.frequency.setValueAtTime(freq * 1.8, time); osc.frequency.exponentialRampToValueAtTime(freq * (isSeca ? 1.1 : 0.6), time + dur);
+          osc.type = 'sine'; osc.frequency.setValueAtTime(freq * 1.8, time); osc.frequency.exponentialRampToValueAtTime(freq * 0.6, time + dur);
           gain.gain.setValueAtTime(vol * 1.8, time); gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
           osc.connect(gain); gain.connect(window.masterGain); osc.start(time); osc.stop(time + dur);
           const noise = window.audioCtx.createBufferSource(); noise.buffer = getNoiseBuffer();
@@ -282,22 +299,23 @@ ui <- page_sidebar(
         else if (instLow.includes('dobra')) { baseFreq = 250; instVol = 1.1; }
         else if (instLow.includes('timbal')) { baseFreq = 180; instVol = 1.0; }
         else if (instLow.includes('caixa')) { baseFreq = 300; instVol = 0.45; }
+        let isGrave = (baseFreq < 200);
 
         if (timbre === 'Meus Sons (.wav)') {
             let buffer = window.sampleBuffers[inst];
             if (buffer) {
                 let volWav = (isAlta ? 1.0 : 0.5) * balanceVol * instVol;
                 if (isRulo) {
-                  window.playSample(buffer, time, volWav*0.7, false);
-                  window.playSample(buffer, time+0.035, volWav*0.7, false);
-                  window.playSample(buffer, time+0.07, volWav, isSeca);
+                  window.playSample(buffer, time, volWav*0.7, false, isGrave);
+                  window.playSample(buffer, time+0.035, volWav*0.7, false, isGrave);
+                  window.playSample(buffer, time+0.07, volWav, isSeca, isGrave);
                 }
-                else if (base !== '') { window.playSample(buffer, time, volWav, isSeca); }
+                else if (base !== '') { window.playSample(buffer, time, volWav, isSeca, isGrave); }
                 return;
             } else { timbre = 'Orgânico / Acústico'; }
         }
 
-        let freq = baseFreq; let isGrave = (baseFreq < 200);
+        let freq = baseFreq;
         let dur = isGrave ? 0.16 : 0.08; let vol = (isGrave ? (0.5 * 1.4) : 0.5) * balanceVol * instVol;
         if (isAlta) { vol = vol * 1.8; dur = dur * 1.3; }
 
@@ -349,6 +367,24 @@ ui <- page_sidebar(
         }
         
         return \"<div style='display: flex; justify-content: space-around; align-items: center; width: 100%; height: 100%;'><span style='color: #bdc3c7; font-weight: bold; margin-right: 8px;'>|</span> \" + html.join(\" \") + \" <span style='color: #bdc3c7; font-weight: bold; margin-left: 8px;'>|</span></div>\";
+      }
+
+      function ajustarLarguraLeitura() {
+        let container = document.getElementById('texto_peteleco');
+        if (!container) return;
+        let containerWidth = container.clientWidth;
+        if (containerWidth <= 0) return;
+        let linhas = container.children;
+        for (let i = 0; i < linhas.length; i++) {
+            let linha = linhas[i];
+            linha.style.transform = '';
+            linha.style.transformOrigin = 'center top';
+            let naturalWidth = linha.scrollWidth;
+            if (naturalWidth > containerWidth) {
+                let ratio = Math.max(0.35, (containerWidth / naturalWidth) * 0.98);
+                linha.style.transform = 'scale(' + ratio + ')';
+            }
+        }
       }
 
       Shiny.addCustomMessageHandler(\"startPlayback\", function(payload) {
@@ -423,9 +459,9 @@ ui <- page_sidebar(
                   // =============================================== //
                   
                   let n = window.measureQueue[0];
-                  let iH = n && n.img ? '<img src=\"' + n.img + '\" style=\"max-height: 90px; max-width: 100%; object-fit: contain;\">' : '<div style=\"height: 90px;\"></div>';
+                  let iH = n && n.img ? '<img src=\"' + n.img + '\" style=\"max-height: 55px; max-width: 100%; object-fit: contain;\">' : '<div style=\"height: 55px;\"></div>';
                   
-                  $('#box_proximo_container').html('<div style=\"opacity:1; display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%;\"><h6 class=\"piscar\" style=\"color:#EF6C00; font-weight:bold; margin:0; min-height:40px; display:flex; align-items:center; justify-content:center; line-height:1.2;\">ATENÇÃO BATERIA: PREPARA</h6><h2 style=\"font-size: 1.8rem; color: #5E2157; font-weight: 900; margin: 2px 0;\">' + (n ? n.nome : '-') + '</h2><div style=\"height: 100px; display: flex; align-items: center; justify-content: center; width: 100%;\">' + iH + '</div></div>');
+                  $('#box_proximo_container').html('<div style=\"opacity:1; display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%;\"><h6 class=\"piscar\" style=\"color:#EF6C00; font-weight:bold; margin:0; min-height:40px; display:flex; align-items:center; justify-content:center; line-height:1.2;\">ATENÇÃO BATERIA: PREPARA</h6><h2 style=\"font-size: 1.8rem; color: #5E2157; font-weight: 900; margin: 2px 0;\">' + (n ? n.nome : '-') + '</h2><div style=\"height: 60px; display: flex; align-items: center; justify-content: center; width: 100%;\">' + iH + '</div></div>');
               }, Math.max(0, (beepTime - window.audioCtx.currentTime) * 1000));
           }
 
@@ -479,7 +515,7 @@ ui <- page_sidebar(
 
           $('#status_texto').text('Sequência concluída! Parabéns!');
           $('#nome_padrao_atual').text('-');
-          $('#imagem_sinal_atual').html('<div style=\"height: 80px;\">-</div>');
+          $('#imagem_sinal_atual').html('<div style=\"height: 55px;\">-</div>');
           $('#conteudo_contador').html('<div class=\"contador-numero texto-desfoque\">-</div>');
           $('#box_proximo_container').html('<div style=\"display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%;\"><h2 style=\"font-size:1.8rem; color:#27ae60; font-weight:900; margin:0;\">CONCLUÍDO!</h2></div>');
           $('#texto_peteleco').html('Sequência concluída. Toque em Tocar para repetir do início.');
@@ -496,17 +532,17 @@ ui <- page_sidebar(
 
               $('#status_texto').text('Tocando...');
               $('#nome_padrao_atual').text(m.nome);
-              $('#imagem_sinal_atual').html(m.img ? '<img src=\"' + m.img + '\" style=\"max-height: 80px; max-width: 100%; object-fit: contain; filter: grayscale(40%); opacity: 0.9;\">' : '<div style=\"height: 80px;\">-</div>');
+              $('#imagem_sinal_atual').html(m.img ? '<img src=\"' + m.img + '\" style=\"max-height: 55px; max-width: 100%; object-fit: contain; filter: grayscale(40%); opacity: 0.9;\">' : '<div style=\"height: 55px;\">-</div>');
 
               if (window.isLoop) {
                   $('#conteudo_contador').html('<div class=\"contador-numero texto-desfoque\">∞</div>');
                   $('#box_proximo_container').html('<div style=\"display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; opacity: 0.3;\"><h2 style=\"font-size: 1.8rem; color: #5E2157; font-weight: 900; margin: 0;\">MODO LOOP</h2></div>').css('box-shadow', '0 8px 20px rgba(0,0,0,0.05)');
                               } else {
                                 if (m.restantes === 1) {
-                                  let iH = m.futuro_img ? '<img src=\"'+m.futuro_img+'\" style=\"max-height: 90px; max-width: 100%; object-fit: contain;\">' : '<div style=\"height: 90px;\"></div>';
+                                  let iH = m.futuro_img ? '<img src=\"'+m.futuro_img+'\" style=\"max-height: 55px; max-width: 100%; object-fit: contain;\">' : '<div style=\"height: 55px;\"></div>';
                                   
                                   $('#conteudo_contador').html('<div class=\"contador-numero texto-desfoque\">-</div>');
-                                  $('#box_proximo_container').html('<div style=\"display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%;\"><h6 class=\"piscar\" style=\"color: #EF6C00; font-weight: bold; margin: 0; min-height: 40px; display: flex; align-items: center; justify-content: center; line-height: 1.2;\">ATENÇÃO BATERIA: PREPARA</h6><h2 style=\"font-size: 1.8rem; color: #5E2157; font-weight: 900; text-align: center; margin: 2px 0; min-height: 35px;\">' + (m.futuro || '-') + '</h2><div style=\"height: 100px; display: flex; align-items: center; justify-content: center; width: 100%;\">' + iH + '</div></div>').css('box-shadow', '0 8px 30px rgba(239,108,0,0.5)');
+                                  $('#box_proximo_container').html('<div style=\"display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%;\"><h6 class=\"piscar\" style=\"color: #EF6C00; font-weight: bold; margin: 0; min-height: 40px; display: flex; align-items: center; justify-content: center; line-height: 1.2;\">ATENÇÃO BATERIA: PREPARA</h6><h2 style=\"font-size: 1.8rem; color: #5E2157; font-weight: 900; text-align: center; margin: 2px 0; min-height: 35px;\">' + (m.futuro || '-') + '</h2><div style=\"height: 60px; display: flex; align-items: center; justify-content: center; width: 100%;\">' + iH + '</div></div>').css('box-shadow', '0 8px 30px rgba(239,108,0,0.5)');
                                 } else {
                                   $('#conteudo_contador').html('<div class=\"contador-numero texto-desfoque\">-</div>');
                                   $('#box_proximo_container').html('<div style=\"display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; opacity: 0.3;\"><h2 style=\"font-size: 1.8rem; color: #5E2157; font-weight: 900; margin: 0;\">-</h2><div style=\"position: absolute; color: #bdc3c7; font-weight: bold; font-style: italic; font-size: 1.3rem;\">MANTÉM...</div></div>').css('box-shadow', '0 8px 20px rgba(239,108,0,0.05)');
@@ -515,7 +551,8 @@ ui <- page_sidebar(
 
               let str1 = (currentMet === 1) ? m.html : m_next.html;
               let str2 = (currentMet === 1) ? m_next.html : m.html;
-              $('#texto_peteleco').html('<div style=\"margin-bottom: 8px;\">' + formatPetelecoLine(str1, 0) + '</div><div>' + formatPetelecoLine(str2, 4) + '</div>');
+              $('#texto_peteleco').html('<div style=\"margin-bottom: 3px;\">' + formatPetelecoLine(str1, 0) + '</div><div>' + formatPetelecoLine(str2, 4) + '</div>');
+              ajustarLarguraLeitura();
 
           }, delayMs);
 
@@ -625,16 +662,16 @@ ui <- page_sidebar(
     )
   ),
   
-  div(id = "seletor_modo", style = "display: flex; gap: 10px; justify-content: center; margin-bottom: 15px;",
+  div(id = "seletor_modo", style = "display: flex; gap: 10px; justify-content: center; margin-bottom: 8px;",
       actionButton("ir_modo_livre", "🎵 Ensaio Livre", class = "btn-modo-tab btn-modo-ativo"),
       actionButton("ir_modo_montar", "🛠️ Montar Sequência", class = "btn-modo-tab")
   ),
   div(id = "tela_ensaio_livre", style = "width: 100%;",
   card(
-    class = "text-center", style = "display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 85vh;",
+    class = "text-center", style = "display: flex; flex-direction: column; align-items: center;",
     div(
       id = "cabecalho_livre",
-      style = "display: flex; flex-direction: column; width: 100%; margin-bottom: 15px; padding: 0 10px; gap: 12px;",
+      style = "display: flex; flex-direction: column; width: 100%; margin-bottom: 8px; padding: 0 10px; gap: 8px;",
       div(
         style = "display: flex; justify-content: space-between; align-items: center; width: 100%;",
         h4(id = "status_texto", "Pronto para o ensaio! Escolha as levadas e toque.", style = "color: #EF6C00 !important; font-weight: bold; margin: 0;"),
@@ -666,7 +703,7 @@ ui <- page_sidebar(
     # 2. Painel Condutor Reorganizado
     div(
       class = "painel-condutor",
-      style = "display: flex; flex-direction: column; gap: 15px; width: 100%;",
+      style = "display: flex; flex-direction: column; gap: 8px; width: 100%;",
       
       # Linha Superior: Tocando e Próximo
       div(
@@ -676,7 +713,7 @@ ui <- page_sidebar(
           class = "box-atual", id = "box_atual_container", style = "flex: 1;",
           h6("TOCANDO", style = "color: #7f8c8d; font-weight: bold; font-size: 0.8rem; margin: 0;"),
           h3(id = "nome_padrao_atual", "-", style = "font-size: 1.1rem; font-weight: bold; color: #34495e; text-align: center; margin: 8px 0; min-height: 28px;"),
-          tags$div(id = "imagem_sinal_atual", tags$div(style = "height: 80px;", "-"))
+          tags$div(id = "imagem_sinal_atual", tags$div(style = "height: 55px;", "-"))
         ),
         div(
           class = "box-proximo", id = "box_proximo_container", style = "flex: 1;",
@@ -694,7 +731,7 @@ ui <- page_sidebar(
           id = "robo_maestro",
           style = "background-color: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 12px; display: flex; justify-content: center; align-items: center; padding: 10px; min-width: 150px;",
           HTML("
-            <svg width=\"130\" height=\"130\" viewBox=\"0 0 140 150\" xmlns=\"http://www.w3.org/2000/svg\">
+            <svg width=\"90\" height=\"90\" viewBox=\"0 0 140 150\" xmlns=\"http://www.w3.org/2000/svg\">
             <style>
               #arm-l, #arm-r, #foot-l, #foot-r { 
                 transition: transform 0.1s ease-in-out; 
@@ -743,8 +780,8 @@ ui <- page_sidebar(
     
     div(
       id = "box_leitura",
-      style = "background-color: #f8f9fa; padding: 20px 25px; border-radius: 12px; width: 100%; margin-top: 10px; border: 1px solid #e0e0e0; display: flex; flex-direction: column; justify-content: center; box-sizing: border-box;",
-      h5(textOutput("titulo_instrumento"), style = "color: #7f8c8d !important; margin-bottom: 15px; text-align: center; font-size: 1.1rem; font-weight: bold;"),
+      style = "background-color: #f8f9fa; padding: 14px 20px; border-radius: 12px; width: 100%; margin-top: 6px; border: 1px solid #e0e0e0; display: flex; flex-direction: column; justify-content: center; box-sizing: border-box;",
+      h5(textOutput("titulo_instrumento"), style = "color: #7f8c8d !important; margin-bottom: 6px; text-align: center; font-size: 1.1rem; font-weight: bold;"),
       tags$div(id = "texto_peteleco", style = "font-size: clamp(14px, 2.2vw, 26px); width: 100%; display: flex; flex-direction: column; gap: 8px;", "Nenhum sinal ativo no momento.")
     )
   )
