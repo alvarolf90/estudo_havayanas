@@ -162,16 +162,40 @@ KEEPALIVE_SCRIPT = """<script>
     // a fase de carregamento do app, que pode ficar varios segundos sem
     // NENHUMA requisicao de rede enquanto o webR/R inicializa (so CPU
     // rodando) - ver item 5 no topo deste script de patch pra teoria/
-    // evidencia completa. Manda um ping inofensivo pro SW a cada 1s
-    // enquanto a pagina carrega, limitado a REPLACE_MAX_PINGSs de
-    // seguranca (bem mais que o suficiente pro carregamento do app).
-    // O shinylive-sw.js ja ignora silenciosamente qualquer mensagem que
-    // nao seja do tipo "configureProxyPath", entao esse ping e seguro sem
-    // precisar alterar o arquivo gerado do SW.
+    // evidencia completa.
+    //
+    // v2 (2026-09-29, apos Deploy 9 confirmado insuficiente sozinho por HAR
+    // do usuario - o ping por postMessage no Deploy 9 NAO evitou o 404):
+    // alem do postMessage (que so aciona o listener de "message" do SW,
+    // sem garantia de resetar qualquer timer de ociosidade que o WebKit
+    // use pra decidir suspender o SW), agora TAMBEM dispara um fetch()
+    // real e barato (reusando um arquivo pequeno ja carregado,
+    // load-shinylive-sw.js, sem no-store - deixa o navegador servir do
+    // cache HTTP quando possivel) a cada tick. Um fetch de verdade passa
+    // pelo pipeline de "fetch event" do proprio Service Worker (e' o SW
+    // quem decide responder do cache ou da rede), que e' um sinal de
+    // atividade mais forte/realista pro WebKit do que so uma mensagem
+    // interna - e e' justamente esse pipeline de fetch que precisa estar
+    // "quente" pro SW conseguir interceptar a navegacao do iframe depois.
+    // Intervalo reduzido de 1s pra REPLACE_INTERVAL_MSms, limitado a
+    // REPLACE_MAX_PINGS ticks de seguranca (bem mais que o suficiente pro
+    // carregamento do app). O shinylive-sw.js ja ignora silenciosamente
+    // qualquer mensagem que nao seja do tipo "configureProxyPath", entao
+    // o ping por postMessage continua seguro sem precisar alterar o
+    // arquivo gerado do SW; o fetch e' de um arquivo que o proprio SW ja
+    // sabe servir (parte do bundle padrao do shinylive).
     (function () {
       if (!navigator.serviceWorker) return;
       var count = 0;
       var maxPings = REPLACE_MAX_PINGS;
+      var keepaliveUrl = (function () {
+        var scripts = document.getElementsByTagName("script");
+        for (var i = 0; i < scripts.length; i++) {
+          var src = scripts[i].getAttribute("src") || "";
+          if (src.indexOf("load-shinylive-sw.js") !== -1) return src;
+        }
+        return "./shinylive/load-shinylive-sw.js";
+      })();
       var timer = setInterval(function () {
         count++;
         if (count > maxPings) {
@@ -183,10 +207,15 @@ KEEPALIVE_SCRIPT = """<script>
             navigator.serviceWorker.controller.postMessage({ type: "keepAlivePing" });
           } catch (e) {}
         }
-      }, 1000);
+        try {
+          fetch(keepaliveUrl, { cache: "default" }).catch(function () {});
+        } catch (e) {}
+      }, REPLACE_INTERVAL_MS);
     })();
     </script>
-    """.replace("REPLACE_MARKER_4", MARKER_4).replace("REPLACE_MAX_PINGS", "90")
+    """.replace("REPLACE_MARKER_4", MARKER_4).replace("REPLACE_MAX_PINGS", "180").replace(
+    "REPLACE_INTERVAL_MS", "500"
+)
 
 # Bloco que vai ANTES de "runExportedApp({" - substitui qualquer versao
 # anterior (inclusive a tentativa de retry no mesmo iframe, que nao
@@ -298,6 +327,17 @@ IMPORT_TO_CALL_RE = re.compile(
     re.S,
 )
 
+NEEDLE_LOAD_SW_SCRIPT = '    <script\n      src="./shinylive/load-shinylive-sw.js"'
+
+# Qualquer variante anterior da parte 4 que precise ser removida antes de
+# inserir a nova (ex.: trocar o intervalo/mecanismo do keep-alive sem
+# precisar mudar o marcador) - identificada pelo comentario "Fix (parte 4"
+# ate o </script> que vem logo antes do script load-shinylive-sw.js.
+KEEPALIVE_BLOCK_RE = re.compile(
+    r"<script>\s*// Fix \(parte 4.*?</script>\s*(?=" + re.escape(NEEDLE_LOAD_SW_SCRIPT) + r")",
+    re.S,
+)
+
 
 def patch(index_path: Path) -> bool:
     html = index_path.read_text(encoding="utf-8")
@@ -318,17 +358,24 @@ def patch(index_path: Path) -> bool:
         changed = True
 
     # Parte 4: ping periodico pro SW durante o carregamento (independente das
-    # partes 1/2/3 - insercao/idempotencia proprias).
-    if MARKER_4 in html:
-        print(f"Parte 4 ja aplicada (marcador '{MARKER_4}' encontrado).")
+    # partes 1/2/3 - insercao/idempotencia proprias). Substitui (idempotente,
+    # igual as partes 2/3) qualquer versao anterior do bloco pra que mudar o
+    # MECANISMO do keep-alive (ex.: intervalo, adicionar fetch()) nao precise
+    # de um marcador novo - so trocar o conteudo de KEEPALIVE_SCRIPT acima.
+    if KEEPALIVE_BLOCK_RE.search(html):
+        if KEEPALIVE_BLOCK_RE.search(html).group(0) == KEEPALIVE_SCRIPT:
+            print(f"Parte 4 ja aplicada e atualizada (marcador '{MARKER_4}').")
+        else:
+            html = KEEPALIVE_BLOCK_RE.sub(lambda m: KEEPALIVE_SCRIPT, html, count=1)
+            print("Parte 4 atualizada: novo mecanismo de keep-alive pro Service Worker.")
+            changed = True
     else:
-        needle4 = '    <script\n      src="./shinylive/load-shinylive-sw.js"'
-        if needle4 not in html:
+        if NEEDLE_LOAD_SW_SCRIPT not in html:
             raise SystemExit(
                 "Nao encontrei o ponto de insercao da parte 4 (script load-shinylive-sw.js). "
                 "O formato do index.html exportado pode ter mudado - ajuste o script."
             )
-        html = html.replace(needle4, KEEPALIVE_SCRIPT + needle4, 1)
+        html = html.replace(NEEDLE_LOAD_SW_SCRIPT, KEEPALIVE_SCRIPT + NEEDLE_LOAD_SW_SCRIPT, 1)
         print("Parte 4 aplicada: ping periodico pro Service Worker durante o carregamento.")
         changed = True
 

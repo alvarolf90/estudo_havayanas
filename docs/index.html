@@ -47,16 +47,40 @@
     // a fase de carregamento do app, que pode ficar varios segundos sem
     // NENHUMA requisicao de rede enquanto o webR/R inicializa (so CPU
     // rodando) - ver item 5 no topo deste script de patch pra teoria/
-    // evidencia completa. Manda um ping inofensivo pro SW a cada 1s
-    // enquanto a pagina carrega, limitado a 90s de
-    // seguranca (bem mais que o suficiente pro carregamento do app).
-    // O shinylive-sw.js ja ignora silenciosamente qualquer mensagem que
-    // nao seja do tipo "configureProxyPath", entao esse ping e seguro sem
-    // precisar alterar o arquivo gerado do SW.
+    // evidencia completa.
+    //
+    // v2 (2026-09-29, apos Deploy 9 confirmado insuficiente sozinho por HAR
+    // do usuario - o ping por postMessage no Deploy 9 NAO evitou o 404):
+    // alem do postMessage (que so aciona o listener de "message" do SW,
+    // sem garantia de resetar qualquer timer de ociosidade que o WebKit
+    // use pra decidir suspender o SW), agora TAMBEM dispara um fetch()
+    // real e barato (reusando um arquivo pequeno ja carregado,
+    // load-shinylive-sw.js, sem no-store - deixa o navegador servir do
+    // cache HTTP quando possivel) a cada tick. Um fetch de verdade passa
+    // pelo pipeline de "fetch event" do proprio Service Worker (e' o SW
+    // quem decide responder do cache ou da rede), que e' um sinal de
+    // atividade mais forte/realista pro WebKit do que so uma mensagem
+    // interna - e e' justamente esse pipeline de fetch que precisa estar
+    // "quente" pro SW conseguir interceptar a navegacao do iframe depois.
+    // Intervalo reduzido de 1s pra 500ms, limitado a
+    // 180 ticks de seguranca (bem mais que o suficiente pro
+    // carregamento do app). O shinylive-sw.js ja ignora silenciosamente
+    // qualquer mensagem que nao seja do tipo "configureProxyPath", entao
+    // o ping por postMessage continua seguro sem precisar alterar o
+    // arquivo gerado do SW; o fetch e' de um arquivo que o proprio SW ja
+    // sabe servir (parte do bundle padrao do shinylive).
     (function () {
       if (!navigator.serviceWorker) return;
       var count = 0;
-      var maxPings = 90;
+      var maxPings = 180;
+      var keepaliveUrl = (function () {
+        var scripts = document.getElementsByTagName("script");
+        for (var i = 0; i < scripts.length; i++) {
+          var src = scripts[i].getAttribute("src") || "";
+          if (src.indexOf("load-shinylive-sw.js") !== -1) return src;
+        }
+        return "./shinylive/load-shinylive-sw.js";
+      })();
       var timer = setInterval(function () {
         count++;
         if (count > maxPings) {
@@ -68,7 +92,10 @@
             navigator.serviceWorker.controller.postMessage({ type: "keepAlivePing" });
           } catch (e) {}
         }
-      }, 1000);
+        try {
+          fetch(keepaliveUrl, { cache: "default" }).catch(function () {});
+        } catch (e) {}
+      }, 500);
     })();
     </script>
         <script
