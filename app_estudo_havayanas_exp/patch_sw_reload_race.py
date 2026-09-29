@@ -95,7 +95,7 @@ from pathlib import Path
 
 MARKER_1 = "shinylive-sw-reloaded"
 MARKER_2 = "espera-controle-real-sem-atalho-de-timeout"
-MARKER_3 = "desregistra-sw-e-recarrega-se-iframe-cair-no-404-do-github-pages"
+MARKER_3 = "desregistra-sw-com-timeout-e-recarrega-se-iframe-cair-no-404"
 
 PATCH_SCRIPT = """<script>
     // Fix (parte 1/3): posit-dev/shinylive#133 - navigator.serviceWorker.ready
@@ -197,6 +197,22 @@ WAIT_BLOCK = """import { runExportedApp } from "./shinylive/shinylive.js";
             console.log(
               "[fix iframe 404] iframe caiu no 404 do GitHub Pages - desregistrando o Service Worker (nao so recarregando a pagina, que manteria o MESMO SW no controle) antes de tentar de novo do zero."
             );
+            // Confirmado ao vivo em 2026-09-29: no iPhone do usuario, nenhum reload
+            // aconteceu depois dessa deteccao (o HAR exportado so mostrava 1
+            // carregamento de pagina) - suspeita forte e que getRegistrations()/
+            // unregister() pode travar (nunca resolver) quando o proprio SW ja
+            // esta num estado travado, o que impediria o .then() de chamar
+            // reload(). Por isso agora o reload tem uma garantia de tempo (2s):
+            // se o desregistro nao terminar nesse prazo, recarrega assim mesmo.
+            var reloadOnce = (function () {
+              var done = false;
+              return function () {
+                if (done) return;
+                done = true;
+                window.location.reload();
+              };
+            })();
+            setTimeout(reloadOnce, 2000);
             Promise.resolve(
               navigator.serviceWorker
                 ? navigator.serviceWorker.getRegistrations().then(function (regs) {
@@ -209,9 +225,7 @@ WAIT_BLOCK = """import { runExportedApp } from "./shinylive/shinylive.js";
                 : null
             )
               .catch(function () {})
-              .then(function () {
-                window.location.reload();
-              });
+              .then(reloadOnce);
           });
         }
         new MutationObserver(function () {
