@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Shiny App</title>
 <script>
-    // Fix: posit-dev/shinylive#133 - navigator.serviceWorker.ready resolve
-    // antes do controllerchange real (afeta Safari/WebKit). Baseado no
+    // Fix (parte 1/3): posit-dev/shinylive#133 - navigator.serviceWorker.ready
+    // resolve antes do controllerchange real (afeta Safari/WebKit). Baseado no
     // patch usado em posit-dev/py-shiny-site#478.
     (function () {
       var container = navigator.serviceWorker;
