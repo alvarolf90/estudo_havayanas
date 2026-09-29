@@ -48,6 +48,13 @@
     ></script>
     <script type="module">
       import { runExportedApp } from "./shinylive/shinylive.js";
+      // Fix (parte 2/2): espera o Service Worker realmente assumir o
+      // controle (usando o getter .ready ja corrigido acima) antes de criar
+      // o iframe interno do app - sem isso a parte 1 sozinha nao adianta,
+      // pois o iframe e criado cedo demais de qualquer forma.
+      if (navigator.serviceWorker) {
+        await navigator.serviceWorker.ready;
+      }
       runExportedApp({
         id: "root",
         appEngine: "r",
