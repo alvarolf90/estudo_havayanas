@@ -4,7 +4,45 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Shiny App</title>
-    <script
+<script>
+    // Fix: posit-dev/shinylive#133 - navigator.serviceWorker.ready resolve
+    // antes do controllerchange real (afeta Safari/WebKit). Baseado no
+    // patch usado em posit-dev/py-shiny-site#478.
+    (function () {
+      var container = navigator.serviceWorker;
+      if (!container) return;
+      var nativeReady = Object.getOwnPropertyDescriptor(
+        ServiceWorkerContainer.prototype,
+        "ready"
+      ).get;
+      var reloadedKey = "shinylive-sw-reloaded";
+      var ready;
+      Object.defineProperty(container, "ready", {
+        configurable: true,
+        get: function () {
+          ready = ready || nativeReady.call(container).then(function (registration) {
+            return new Promise(function (resolve) {
+              function controlled() { resolve(registration); }
+              if (container.controller) return controlled();
+              container.addEventListener("controllerchange", controlled, { once: true });
+              setTimeout(function () {
+                if (container.controller) return controlled();
+                try {
+                  if (sessionStorage.getItem(reloadedKey)) return;
+                  sessionStorage.setItem(reloadedKey, "1");
+                } catch (e) {
+                  return;
+                }
+                controlled();
+              }, 2000);
+            });
+          });
+          return ready;
+        },
+      });
+    })();
+    </script>
+        <script
       src="./shinylive/load-shinylive-sw.js"
       type="module"
     ></script>
