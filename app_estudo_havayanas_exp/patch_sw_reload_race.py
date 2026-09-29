@@ -1,58 +1,75 @@
 #!/usr/bin/env python3
 """
-Corrige duas corridas conhecidas do shinylive envolvendo o Service Worker
+Corrige corridas conhecidas do shinylive envolvendo o Service Worker (SW)
 e a rota virtual do iframe interno do app (tipo app_<hash>/):
 
 1) posit-dev/shinylive#133 / posit-dev/py-shiny-site#478: a pagina chama
    runExportedApp() (que cria o iframe) ANTES do SW estar de fato
    controlando a pagina.
 
-2) Confirmado ao vivo via Web Inspector (Safari, iPhone) em 2026-09-29,
-   e de novo em 2026-09-29 apos a correcao da parte 1+2 nao resolver:
+2) Confirmado ao vivo via Web Inspector (Safari, iPhone) em 2026-09-29:
    MESMO com o SW ja no controle (navigator.serviceWorker.controller
    truthy) antes de criar o iframe, a navegacao do iframe pra rota
-   virtual as vezes ainda passa direto pra rede (bug conhecido do
-   WebKit/iOS: uma requisicao originada de dentro de um iframe nem
-   sempre e interceptada pelo fetch handler do SW, mesmo com o SW
-   controlando a pagina) e cai no 404 real do GitHub Pages - o erro
-   customizado do proprio shinylive-sw.js ("Couldn't find parent page")
-   NAO aparece, confirmando que a requisicao nem chega no fetch handler
-   do SW. Como o iframe ocupa a tela inteira, parece que o app inteiro
-   deu 404.
+   virtual as vezes ainda passa direto pra rede e cai no 404 real do
+   GitHub Pages - o erro customizado do proprio shinylive-sw.js
+   ("Couldn't find parent page") NAO aparece, confirmando que a
+   requisicao nem chega no fetch handler do SW.
 
-Tres partes, todas necessarias, com propositos DIFERENTES e por isso
-NAO devem compartilhar o mesmo timeout:
+3) Tentativa anterior (deploy f279e45) de reagir a esse 404 re-navegando
+   O MESMO elemento iframe (com um parametro de cache-bust na URL) NAO
+   funcionou: confirmado ao vivo que as 3 tentativas de retry, na MESMA
+   sessao, falharam de forma IDENTICA (mesmo 404 real do GitHub Pages
+   todas as vezes). Isso bate com relatos publicos (ver referencia
+   abaixo) de que o WebKit as vezes nunca registra um iframe especifico
+   como "client" controlado pelo SW - ou seja, o problema pode ser por
+   IFRAME (nao por requisicao), e re-navegar o MESMO iframe nao da uma
+   nova chance de verdade. Um iframe totalmente novo (criado do zero)
+   teria uma chance independente - mas o iframe interno e gerenciado
+   pelo React de dentro do shinylive.js (via viewerFrameRef), e
+   substituir esse no do DOM por fora do React arrisca quebrar a
+   reconciliacao do React (ex.: crash ao tentar remover um no que o
+   React acha que ainda existe). Trocar so o iframe nao e seguro de
+   fazer via patch externo.
+   Referencia: "ServiceWorkers is not working in iFrame" (Apple Developer
+   Forums, https://developer.apple.com/forums/thread/769673) - descreve
+   isso como uma limitacao ampla do WebKit (nao so iOS, nao amarrada a
+   uma versao especifica) de nao interceptar fetches originados de
+   dentro de um iframe mesmo com o SW no controle da pagina pai.
+
+Como um iframe novo so surge organicamente via um reload da pagina
+inteira (o React remonta tudo do zero, incluindo um iframe com uma
+"chance" nova), a estrategia agora e: se o iframe cair nesse 404 real
+do GitHub Pages, recarregar a PAGINA INTEIRA (nao so o iframe) - no
+maximo 1 vez por aba, pra nao entrar em loop se o dispositivo realmente
+nao conseguir de jeito nenhum (nesse caso o usuario fica no erro depois
+dessa 1 tentativa extra, em vez de ficar recarregando pra sempre).
+
+Quatro partes, cada uma com proposito e timeout PROPRIOS (nao
+compartilhados entre si):
 
 1. Sobrescreve navigator.serviceWorker.ready pra so resolver quando o
    SW REALMENTE assumir o controle (evento controllerchange), com uma
    janela de seguranca de 2s + no maximo 1 reload de pagina inteira por
-   aba (nunca loop infinito) - baseado no patch usado em
-   posit-dev/py-shiny-site#478. Esse timeout de 2s existe so pra decidir
-   "desisto e recarrego a pagina", nao pra dizer "pode seguir em frente
-   sem controle real".
+   aba - baseado no patch usado em posit-dev/py-shiny-site#478. Esse
+   timeout de 2s existe so pra decidir "desisto e recarrego a pagina",
+   nao pra dizer "pode seguir em frente sem controle real".
 2. Faz o script que cria o app (runExportedApp) ESPERAR o controle REAL
-   do SW antes de criar o iframe - usando uma espera PROPRIA, SEM o
-   atalho de timeout da parte 1 (se usasse o mesmo .ready patcheado, o
-   timeout de 2s da parte 1 liberaria a criacao do iframe cedo demais de
-   novo - foi exatamente esse o bug da primeira tentativa desse patch).
-   Se o controle nunca vier, quem resolve e o reload de pagina inteira
-   feito pela parte 1 (que cancela essa espera pendente de qualquer
-   forma).
-3. Observa o iframe interno (via MutationObserver) e, quando ele navega
-   pra uma rota app_<hash>/ e o resultado e o 404 real do GitHub Pages
+   do SW antes de criar o iframe - espera PROPRIA, SEM o atalho de
+   timeout da parte 1 (reusar o .ready patcheado repetiria o bug da
+   primeira tentativa desse patch, que liberava a criacao do iframe
+   cedo demais).
+3. Observa o iframe interno (via MutationObserver) e, se ele navegar
+   pra uma rota app_<hash>/ e cair no 404 real do GitHub Pages
    (identificado pelo titulo do documento carregado, "... GitHub
-   Pages" - nao pelo erro customizado do shinylive-sw.js, que e
-   diferente), tenta de novo SO a navegacao do iframe (nao a pagina
-   toda - evita perder o webR/R.wasm ja carregado, ~12MB) ate 3 vezes
-   com atraso crescente, usando um parametro de cache-bust na URL pra
-   garantir uma requisicao nova de verdade.
+   Pages"), recarrega a pagina inteira - no maximo 1 vez por aba
+   (contador proprio, separado do da parte 1).
 
 Este script precisa ser rodado toda vez depois de `shinylive::export()`,
 pois o export regenera docs/index.html do zero (sem o patch). E
 idempotente: pode ser rodado varias vezes sem duplicar nada, e se
 rodado sobre um docs/index.html com uma versao ANTIGA de alguma parte
-(ex: parte 2 com o bug do timeout compartilhado, ou sem a parte 3), ele
-substitui pela versao corrigida/atual.
+(incluindo a tentativa anterior de retry no mesmo iframe, que nao
+funcionou), ele substitui pela versao atual.
 
 Uso: python3 patch_sw_reload_race.py [caminho_para_docs/index.html]
 """
@@ -62,7 +79,7 @@ from pathlib import Path
 
 MARKER_1 = "shinylive-sw-reloaded"
 MARKER_2 = "espera-controle-real-sem-atalho-de-timeout"
-MARKER_3 = "observa-iframe-404-github-pages-e-tenta-de-novo"
+MARKER_3 = "recarrega-pagina-se-iframe-cair-no-404-do-github-pages"
 
 PATCH_SCRIPT = """<script>
     // Fix (parte 1/3): posit-dev/shinylive#133 - navigator.serviceWorker.ready
@@ -105,8 +122,8 @@ PATCH_SCRIPT = """<script>
     """.replace("REPLACE_MARKER_1", MARKER_1)
 
 # Bloco que vai ANTES de "runExportedApp({" - substitui qualquer versao
-# anterior (inclusive a buggy que reusava o .ready com atalho de 2s, e
-# qualquer versao sem a parte 3).
+# anterior (inclusive a tentativa de retry no mesmo iframe, que nao
+# funcionou).
 WAIT_BLOCK = """import { runExportedApp } from "./shinylive/shinylive.js";
       // Fix (parte 2/3 - REPLACE_MARKER_2): espera o controle REAL
       // do Service Worker antes de criar o iframe interno do app. NAO usa
@@ -123,23 +140,22 @@ WAIT_BLOCK = """import { runExportedApp } from "./shinylive/shinylive.js";
       // Fix (parte 3/3 - REPLACE_MARKER_3): mesmo com o SW ja controlando a
       // pagina (espera acima ja resolvida), a navegacao do iframe pra rota
       // virtual app_<hash>/ as vezes ainda passa direto pra rede (bug do
-      // WebKit/iOS - a requisicao de um iframe nem sempre e interceptada
-      // pelo fetch handler do SW). Isso cai no 404 real do GitHub Pages
-      // (diferente do 404 customizado que o proprio shinylive-sw.js
-      // devolveria se so a rota nao estivesse registrada ainda). Aqui a
-      // gente observa o iframe e, se detectar esse 404 (pelo titulo do
-      // documento carregado), tenta de novo SO a navegacao do iframe
-      // (sem recarregar a pagina toda, que perderia o webR/R.wasm ja
-      // carregado) ate 3 vezes com atraso crescente.
+      // WebKit de nao registrar esse iframe especifico como "client"
+      // controlado pelo SW - ver comentario no topo do script de patch).
+      // Como isso parece ser por-iframe (nao por-requisicao), re-navegar
+      // o MESMO iframe nao ajuda - confirmado ao vivo que 3 tentativas
+      // assim falharam identicamente. Entao aqui a gente detecta o 404
+      // real do GitHub Pages (pelo titulo do documento carregado) e
+      // recarrega a PAGINA INTEIRA (que remonta um iframe novo do zero),
+      // no maximo 1 vez por aba pra nao entrar em loop.
       (function () {
         var root = document.getElementById("root");
         if (!root) return;
-        var maxRetries = 3;
+        var reloadKey = "REPLACE_MARKER_3";
         var seen = new WeakSet();
         function watch(iframe) {
           if (seen.has(iframe)) return;
           seen.add(iframe);
-          var attempts = 0;
           iframe.addEventListener("load", function () {
             var doc;
             try {
@@ -149,22 +165,23 @@ WAIT_BLOCK = """import { runExportedApp } from "./shinylive/shinylive.js";
             }
             if (!doc || !/\\/app_[^/]+\\//.test(iframe.src || "")) return;
             if ((doc.title || "").indexOf("GitHub Pages") === -1) return;
-            if (attempts >= maxRetries) {
-              console.log("[fix iframe 404] excedeu " + maxRetries + " tentativas, desistindo.");
+            var count = 0;
+            try {
+              count = parseInt(sessionStorage.getItem(reloadKey) || "0", 10);
+            } catch (e) {}
+            if (count >= 1) {
+              console.log(
+                "[fix iframe 404] ja tentou recarregar a pagina uma vez e o problema persistiu - desistindo."
+              );
               return;
             }
-            attempts++;
+            try {
+              sessionStorage.setItem(reloadKey, String(count + 1));
+            } catch (e) {}
             console.log(
-              "[fix iframe 404] iframe caiu no 404 do GitHub Pages, tentativa " +
-                attempts +
-                " de " +
-                maxRetries +
-                "."
+              "[fix iframe 404] iframe caiu no 404 do GitHub Pages - recarregando a pagina inteira pra tentar de novo do zero."
             );
-            setTimeout(function () {
-              var base = iframe.src.split("?")[0];
-              iframe.src = base + "?_retry=" + Date.now();
-            }, 400 * attempts);
+            window.location.reload();
           });
         }
         new MutationObserver(function () {
@@ -178,9 +195,9 @@ WAIT_BLOCK = """import { runExportedApp } from "./shinylive/shinylive.js";
     "REPLACE_MARKER_3", MARKER_3
 )
 
-# Qualquer variante anterior da parte 2/3 que precise ser removida antes de
-# inserir a nova (incluindo versoes buggy ou sem a parte 3), identificada
-# pelo import seguido de comentarios/codigo ate chegar em "runExportedApp({".
+# Qualquer variante anterior das partes 2/3 que precise ser removida antes
+# de inserir a nova, identificada pelo import seguido de comentarios/
+# codigo ate chegar em "runExportedApp({".
 IMPORT_TO_CALL_RE = re.compile(
     r'import \{ runExportedApp \} from "\./shinylive/shinylive\.js";.*?runExportedApp\(\{',
     re.S,
@@ -216,8 +233,8 @@ def patch(index_path: Path) -> bool:
             )
         html = IMPORT_TO_CALL_RE.sub(lambda m: WAIT_BLOCK, html, count=1)
         print(
-            "Partes 2/3 e 3/3 aplicadas: espera o controle real do SW e observa "
-            "o iframe pra tentar de novo se cair no 404 do GitHub Pages."
+            "Partes 2/3 e 3/3 aplicadas: espera o controle real do SW e recarrega "
+            "a pagina inteira (no maximo 1 vez) se o iframe cair no 404 do GitHub Pages."
         )
         changed = True
 

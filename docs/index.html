@@ -60,26 +60,25 @@
           navigator.serviceWorker.addEventListener("controllerchange", resolve, { once: true });
         });
       }
-      // Fix (parte 3/3 - observa-iframe-404-github-pages-e-tenta-de-novo): mesmo com o SW ja controlando a
+      // Fix (parte 3/3 - recarrega-pagina-se-iframe-cair-no-404-do-github-pages): mesmo com o SW ja controlando a
       // pagina (espera acima ja resolvida), a navegacao do iframe pra rota
       // virtual app_<hash>/ as vezes ainda passa direto pra rede (bug do
-      // WebKit/iOS - a requisicao de um iframe nem sempre e interceptada
-      // pelo fetch handler do SW). Isso cai no 404 real do GitHub Pages
-      // (diferente do 404 customizado que o proprio shinylive-sw.js
-      // devolveria se so a rota nao estivesse registrada ainda). Aqui a
-      // gente observa o iframe e, se detectar esse 404 (pelo titulo do
-      // documento carregado), tenta de novo SO a navegacao do iframe
-      // (sem recarregar a pagina toda, que perderia o webR/R.wasm ja
-      // carregado) ate 3 vezes com atraso crescente.
+      // WebKit de nao registrar esse iframe especifico como "client"
+      // controlado pelo SW - ver comentario no topo do script de patch).
+      // Como isso parece ser por-iframe (nao por-requisicao), re-navegar
+      // o MESMO iframe nao ajuda - confirmado ao vivo que 3 tentativas
+      // assim falharam identicamente. Entao aqui a gente detecta o 404
+      // real do GitHub Pages (pelo titulo do documento carregado) e
+      // recarrega a PAGINA INTEIRA (que remonta um iframe novo do zero),
+      // no maximo 1 vez por aba pra nao entrar em loop.
       (function () {
         var root = document.getElementById("root");
         if (!root) return;
-        var maxRetries = 3;
+        var reloadKey = "recarrega-pagina-se-iframe-cair-no-404-do-github-pages";
         var seen = new WeakSet();
         function watch(iframe) {
           if (seen.has(iframe)) return;
           seen.add(iframe);
-          var attempts = 0;
           iframe.addEventListener("load", function () {
             var doc;
             try {
@@ -89,22 +88,23 @@
             }
             if (!doc || !/\/app_[^/]+\//.test(iframe.src || "")) return;
             if ((doc.title || "").indexOf("GitHub Pages") === -1) return;
-            if (attempts >= maxRetries) {
-              console.log("[fix iframe 404] excedeu " + maxRetries + " tentativas, desistindo.");
+            var count = 0;
+            try {
+              count = parseInt(sessionStorage.getItem(reloadKey) || "0", 10);
+            } catch (e) {}
+            if (count >= 1) {
+              console.log(
+                "[fix iframe 404] ja tentou recarregar a pagina uma vez e o problema persistiu - desistindo."
+              );
               return;
             }
-            attempts++;
+            try {
+              sessionStorage.setItem(reloadKey, String(count + 1));
+            } catch (e) {}
             console.log(
-              "[fix iframe 404] iframe caiu no 404 do GitHub Pages, tentativa " +
-                attempts +
-                " de " +
-                maxRetries +
-                "."
+              "[fix iframe 404] iframe caiu no 404 do GitHub Pages - recarregando a pagina inteira pra tentar de novo do zero."
             );
-            setTimeout(function () {
-              var base = iframe.src.split("?")[0];
-              iframe.src = base + "?_retry=" + Date.now();
-            }, 400 * attempts);
+            window.location.reload();
           });
         }
         new MutationObserver(function () {
