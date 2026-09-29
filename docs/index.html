@@ -46,29 +46,15 @@
     // Fix (parte 4 - mantem-sw-vivo-durante-carregamento-com-ping): mantem o Service Worker "vivo" durante
     // a fase de carregamento do app, que pode ficar varios segundos sem
     // NENHUMA requisicao de rede enquanto o webR/R inicializa (so CPU
-    // rodando) - ver item 5 no topo deste script de patch pra teoria/
-    // evidencia completa.
+    // rodando). Mantido mesmo apos a teoria de "SW suspenso por
+    // inatividade" ter sido descartada por HAR (ver item 5 no topo deste
+    // script) - nao faz mal e o custo e desprezivel.
     //
-    // v2 (2026-09-29, apos Deploy 9 confirmado insuficiente sozinho por HAR
-    // do usuario - o ping por postMessage no Deploy 9 NAO evitou o 404):
-    // alem do postMessage (que so aciona o listener de "message" do SW,
-    // sem garantia de resetar qualquer timer de ociosidade que o WebKit
-    // use pra decidir suspender o SW), agora TAMBEM dispara um fetch()
-    // real e barato (reusando um arquivo pequeno ja carregado,
-    // load-shinylive-sw.js, sem no-store - deixa o navegador servir do
-    // cache HTTP quando possivel) a cada tick. Um fetch de verdade passa
-    // pelo pipeline de "fetch event" do proprio Service Worker (e' o SW
-    // quem decide responder do cache ou da rede), que e' um sinal de
-    // atividade mais forte/realista pro WebKit do que so uma mensagem
-    // interna - e e' justamente esse pipeline de fetch que precisa estar
-    // "quente" pro SW conseguir interceptar a navegacao do iframe depois.
-    // Intervalo reduzido de 1s pra 500ms, limitado a
-    // 180 ticks de seguranca (bem mais que o suficiente pro
-    // carregamento do app). O shinylive-sw.js ja ignora silenciosamente
-    // qualquer mensagem que nao seja do tipo "configureProxyPath", entao
-    // o ping por postMessage continua seguro sem precisar alterar o
-    // arquivo gerado do SW; o fetch e' de um arquivo que o proprio SW ja
-    // sabe servir (parte do bundle padrao do shinylive).
+    // v2 (2026-09-29): alem do postMessage (que so aciona o listener de
+    // "message" do SW, sem garantia de resetar qualquer timer de
+    // ociosidade que o WebKit use pra decidir suspender o SW), tambem
+    // dispara um fetch() real e barato (reusando um arquivo pequeno ja
+    // carregado, load-shinylive-sw.js, sem no-store) a cada tick.
     (function () {
       if (!navigator.serviceWorker) return;
       var count = 0;
@@ -98,6 +84,7 @@
       }, 500);
     })();
     </script>
+    
         <script
       src="./shinylive/load-shinylive-sw.js"
       type="module"
@@ -116,22 +103,125 @@
           navigator.serviceWorker.addEventListener("controllerchange", resolve, { once: true });
         });
       }
-      // Fix (parte 3/3 - desregistra-sw-com-timeout-e-recarrega-se-iframe-cair-no-404): mesmo com o SW ja controlando a
-      // pagina (espera acima ja resolvida), a navegacao do iframe pra rota
-      // virtual app_<hash>/ as vezes ainda passa direto pra rede (bug do
-      // WebKit de nao registrar esse iframe especifico como "client"
-      // controlado pelo SW - ver comentario no topo do script de patch).
-      // Como isso parece ser por-iframe (nao por-requisicao), re-navegar
-      // o MESMO iframe nao ajuda - confirmado ao vivo que 3 tentativas
-      // assim falharam identicamente. Entao aqui a gente detecta o 404
-      // real do GitHub Pages (pelo titulo do documento carregado) e
-      // recarrega a PAGINA INTEIRA (que remonta um iframe novo do zero),
-      // no maximo 1 vez por aba pra nao entrar em loop.
+      // Fix (partes 3 e 5 - desregistra-sw-com-timeout-e-recarrega-se-iframe-cair-no-404 / busca-html-real-pelo-frame-pai-e-injeta-no-iframe-sem-reload): mesmo com o
+      // SW ja controlando a pagina (espera acima ja resolvida), a navegacao
+      // do iframe pra rota virtual app_<hash>/ as vezes ainda passa direto
+      // pra rede e cai no 404 real do GitHub Pages (bug conhecido do WebKit
+      // de nao interceptar fetches de NAVEGACAO originados de dentro de um
+      // iframe - ver referencia no topo do script de patch). Ao detectar
+      // isso: primeiro tenta a parte 5 (busca o HTML real pelo FRAME PAI,
+      // que e interceptado certinho pelo SW, e injeta direto no documento
+      // do iframe existente - sem reload de pagina); se isso falhar ou nao
+      // resolver dentro de 5s, cai pro plano B da parte 3 (desregistra o
+      // SW e recarrega a PAGINA INTEIRA, no maximo 2
+      // vezes por aba pra nao entrar em loop).
       (function () {
         var root = document.getElementById("root");
         if (!root) return;
         var reloadKey = "desregistra-sw-com-timeout-e-recarrega-se-iframe-cair-no-404";
+        var softFixKey = "busca-html-real-pelo-frame-pai-e-injeta-no-iframe-sem-reload";
+        var maxReloadRetries = 2;
         var seen = new WeakSet();
+
+        function hardReload() {
+          var count = 0;
+          try {
+            count = parseInt(sessionStorage.getItem(reloadKey) || "0", 10);
+          } catch (e) {}
+          if (count >= maxReloadRetries) {
+            console.log(
+              "[fix iframe 404] ja tentou desregistrar o SW e recarregar " +
+                maxReloadRetries +
+                " vez(es) e o problema persistiu - desistindo."
+            );
+            return;
+          }
+          try {
+            sessionStorage.setItem(reloadKey, String(count + 1));
+          } catch (e) {}
+          console.log(
+            "[fix iframe 404] plano B: desregistrando o Service Worker (nao so " +
+              "recarregando a pagina, que manteria o MESMO SW no controle) antes " +
+              "de tentar de novo do zero (tentativa " + (count + 1) + "/" + maxReloadRetries + ")."
+          );
+          var reloadOnce = (function () {
+            var done = false;
+            return function () {
+              if (done) return;
+              done = true;
+              window.location.reload();
+            };
+          })();
+          setTimeout(reloadOnce, 2000);
+          Promise.resolve(
+            navigator.serviceWorker
+              ? navigator.serviceWorker.getRegistrations().then(function (regs) {
+                  return Promise.all(
+                    regs.map(function (r) {
+                      return r.unregister();
+                    })
+                  );
+                })
+              : null
+          )
+            .catch(function () {})
+            .then(reloadOnce);
+        }
+
+        function trySoftFix(iframe, onFail) {
+          var appUrl = iframe.src;
+          var settled = false;
+          function fail(reason) {
+            if (settled) return;
+            settled = true;
+            console.log("[fix iframe 404] parte 5 nao resolveu (" + reason + ") - caindo pro plano B.");
+            onFail();
+          }
+          function ok() {
+            if (settled) return;
+            settled = true;
+            console.log(
+              "[fix iframe 404] parte 5: HTML real buscado pelo frame pai e injetado " +
+                "direto no iframe, sem precisar recarregar a pagina."
+            );
+          }
+          var errored = false;
+          fetch(appUrl, { cache: "no-store" })
+            .then(function (resp) {
+              if (!resp.ok) throw new Error("fetch pelo frame pai tambem nao-ok (" + resp.status + ")");
+              return resp.text();
+            })
+            .then(function (html) {
+              if (/GitHub Pages/.test(html.slice(0, 2000))) {
+                throw new Error("fetch pelo frame pai tambem caiu no 404 (raro - provavelmente o problema nao e so do iframe dessa vez)");
+              }
+              var doc = iframe.contentDocument;
+              if (!doc) throw new Error("iframe.contentDocument inacessivel");
+              try {
+                iframe.contentWindow.addEventListener(
+                  "error",
+                  function () {
+                    errored = true;
+                  },
+                  true
+                );
+              } catch (e) {}
+              doc.open();
+              doc.write(html);
+              doc.close();
+              setTimeout(function () {
+                if (errored) {
+                  fail("erro de script dentro do iframe apos injetar");
+                } else {
+                  ok();
+                }
+              }, 5000);
+            })
+            .catch(function (e) {
+              fail((e && e.message) || String(e));
+            });
+        }
+
         function watch(iframe) {
           if (seen.has(iframe)) return;
           seen.add(iframe);
@@ -144,51 +234,22 @@
             }
             if (!doc || !/\/app_[^/]+\//.test(iframe.src || "")) return;
             if ((doc.title || "").indexOf("GitHub Pages") === -1) return;
-            var count = 0;
+            var softTried = false;
             try {
-              count = parseInt(sessionStorage.getItem(reloadKey) || "0", 10);
+              softTried = sessionStorage.getItem(softFixKey) === "1";
             } catch (e) {}
-            if (count >= 1) {
+            if (!softTried) {
+              try {
+                sessionStorage.setItem(softFixKey, "1");
+              } catch (e) {}
               console.log(
-                "[fix iframe 404] ja tentou desregistrar o SW e recarregar uma vez e o problema persistiu - desistindo."
+                "[fix iframe 404] iframe caiu no 404 do GitHub Pages - tentando a parte 5 " +
+                  "(buscar HTML real pelo frame pai e injetar direto, sem reload)."
               );
+              trySoftFix(iframe, hardReload);
               return;
             }
-            try {
-              sessionStorage.setItem(reloadKey, String(count + 1));
-            } catch (e) {}
-            console.log(
-              "[fix iframe 404] iframe caiu no 404 do GitHub Pages - desregistrando o Service Worker (nao so recarregando a pagina, que manteria o MESMO SW no controle) antes de tentar de novo do zero."
-            );
-            // Confirmado ao vivo em 2026-09-29: no iPhone do usuario, nenhum reload
-            // aconteceu depois dessa deteccao (o HAR exportado so mostrava 1
-            // carregamento de pagina) - suspeita forte e que getRegistrations()/
-            // unregister() pode travar (nunca resolver) quando o proprio SW ja
-            // esta num estado travado, o que impediria o .then() de chamar
-            // reload(). Por isso agora o reload tem uma garantia de tempo (2s):
-            // se o desregistro nao terminar nesse prazo, recarrega assim mesmo.
-            var reloadOnce = (function () {
-              var done = false;
-              return function () {
-                if (done) return;
-                done = true;
-                window.location.reload();
-              };
-            })();
-            setTimeout(reloadOnce, 2000);
-            Promise.resolve(
-              navigator.serviceWorker
-                ? navigator.serviceWorker.getRegistrations().then(function (regs) {
-                    return Promise.all(
-                      regs.map(function (r) {
-                        return r.unregister();
-                      })
-                    );
-                  })
-                : null
-            )
-              .catch(function () {})
-              .then(reloadOnce);
+            hardReload();
           });
         }
         new MutationObserver(function () {
