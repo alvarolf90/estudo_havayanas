@@ -48,12 +48,17 @@
     ></script>
     <script type="module">
       import { runExportedApp } from "./shinylive/shinylive.js";
-      // Fix (parte 2/2): espera o Service Worker realmente assumir o
-      // controle (usando o getter .ready ja corrigido acima) antes de criar
-      // o iframe interno do app - sem isso a parte 1 sozinha nao adianta,
-      // pois o iframe e criado cedo demais de qualquer forma.
+      // Fix (parte 2/2 - espera-controle-real-sem-atalho-de-timeout): espera o controle REAL
+      // do Service Worker antes de criar o iframe interno do app. NAO usa
+      // o .ready patcheado acima (que tem um atalho de 2s pra decidir
+      // "desisto e recarrego") - aqui a espera e sem atalho: se o controle
+      // nunca vier, quem resolve e o reload de pagina inteira da parte 1,
+      // que cancela essa espera pendente de qualquer forma.
       if (navigator.serviceWorker) {
-        await navigator.serviceWorker.ready;
+        await new Promise(function (resolve) {
+          if (navigator.serviceWorker.controller) return resolve();
+          navigator.serviceWorker.addEventListener("controllerchange", resolve, { once: true });
+        });
       }
       runExportedApp({
         id: "root",

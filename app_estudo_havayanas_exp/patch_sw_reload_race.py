@@ -5,32 +5,43 @@ posit-dev/py-shiny-site#478): a pagina cria o "iframe" interno do app
 (com uma rota virtual tipo app_<hash>/) ANTES do Service Worker estar
 de fato controlando a pagina. Se isso acontecer, essa requisicao cai
 na rede de verdade (em vez de ser interceptada pelo SW) e vira um 404
-real do GitHub Pages, ja que essa rota nao existe como arquivo real.
-Confirmado ao vivo via Web Inspector (Safari) em 2026-09-29: a rota
-"app_<hash>" aparecia com status 404 genuino nas requisicoes de rede.
+real do GitHub Pages, ja que essa rota nao existe como arquivo real -
+e como o iframe ocupa a tela inteira, parece que o app inteiro deu 404.
+Confirmado ao vivo via Web Inspector (Safari, iPhone) em 2026-09-29.
 
-Duas partes, ambas necessarias:
+Duas partes, ambas necessarias, com propositos DIFERENTES e por isso
+NAO devem compartilhar o mesmo timeout:
 1. Sobrescreve navigator.serviceWorker.ready pra so resolver quando o
    SW REALMENTE assumir o controle (evento controllerchange), com uma
    janela de seguranca de 2s + no maximo 1 reload por aba (nunca loop
    infinito) - baseado no patch usado em posit-dev/py-shiny-site#478.
-2. Faz o script que cria o app (runExportedApp) ESPERAR essa mesma
-   promise antes de criar o iframe - sem isso, a parte 1 sozinha nao
-   adianta, pois o iframe e criado cedo demais de qualquer forma.
+   Esse timeout de 2s existe so pra decidir "desisto e recarrego a
+   pagina", nao pra dizer "pode seguir em frente sem controle real".
+2. Faz o script que cria o app (runExportedApp) ESPERAR o controle
+   REAL do SW antes de criar o iframe - usando uma espera PROPRIA,
+   SEM o atalho de timeout da parte 1 (se usasse o mesmo .ready
+   patcheado, o timeout de 2s da parte 1 liberaria a criacao do
+   iframe cedo demais de novo, foi exatamente esse o bug da primeira
+   tentativa desse patch). Se o controle nunca vier, quem resolve e o
+   reload de pagina inteira feito pela parte 1 (que cancela essa
+   espera pendente de qualquer forma).
 
 Este script precisa ser rodado toda vez depois de `shinylive::export()`,
 pois o export regenera docs/index.html do zero (sem o patch). E
-idempotente: pode ser rodado varias vezes sem duplicar nada.
+idempotente: pode ser rodado varias vezes sem duplicar nada, e se
+rodado sobre um docs/index.html com uma versao ANTIGA da parte 2 (com
+o bug do timeout compartilhado), ele substitui pela versao corrigida.
 
 Uso: python3 patch_sw_reload_race.py [caminho_para_docs/index.html]
 """
+import re
 import sys
 from pathlib import Path
 
 MARKER_1 = "shinylive-sw-reloaded"
-MARKER_2 = "await navigator.serviceWorker.ready"
+MARKER_2 = "espera-controle-real-sem-atalho-de-timeout"
 
-PATCH_SCRIPT = '''<script>
+PATCH_SCRIPT = """<script>
     // Fix (parte 1/2): posit-dev/shinylive#133 - navigator.serviceWorker.ready
     // resolve antes do controllerchange real (afeta Safari/WebKit). Baseado no
     // patch usado em posit-dev/py-shiny-site#478.
@@ -41,7 +52,7 @@ PATCH_SCRIPT = '''<script>
         ServiceWorkerContainer.prototype,
         "ready"
       ).get;
-      var reloadedKey = "''' + MARKER_1 + '''";
+      var reloadedKey = "REPLACE_MARKER_1";
       var ready;
       Object.defineProperty(container, "ready", {
         configurable: true,
@@ -68,7 +79,33 @@ PATCH_SCRIPT = '''<script>
       });
     })();
     </script>
-    '''
+    """.replace("REPLACE_MARKER_1", MARKER_1)
+
+# Bloco que vai ANTES de "runExportedApp({" - substitui qualquer versao
+# anterior (inclusive a buggy que reusava o .ready com atalho de 2s).
+WAIT_BLOCK = """import { runExportedApp } from "./shinylive/shinylive.js";
+      // Fix (parte 2/2 - REPLACE_MARKER_2): espera o controle REAL
+      // do Service Worker antes de criar o iframe interno do app. NAO usa
+      // o .ready patcheado acima (que tem um atalho de 2s pra decidir
+      // "desisto e recarrego") - aqui a espera e sem atalho: se o controle
+      // nunca vier, quem resolve e o reload de pagina inteira da parte 1,
+      // que cancela essa espera pendente de qualquer forma.
+      if (navigator.serviceWorker) {
+        await new Promise(function (resolve) {
+          if (navigator.serviceWorker.controller) return resolve();
+          navigator.serviceWorker.addEventListener("controllerchange", resolve, { once: true });
+        });
+      }
+      runExportedApp({""".replace("REPLACE_MARKER_2", MARKER_2)
+
+# Qualquer variante anterior da parte 2 que precise ser removida antes de
+# inserir a nova (incluindo a versao buggy que usava "await navigator.
+# serviceWorker.ready;"), identificada pelo import seguido de comentarios/
+# codigo ate chegar em "runExportedApp({".
+IMPORT_TO_CALL_RE = re.compile(
+    r'import \{ runExportedApp \} from "\./shinylive/shinylive\.js";.*?runExportedApp\(\{',
+    re.S,
+)
 
 def patch(index_path: Path) -> bool:
     html = index_path.read_text(encoding="utf-8")
@@ -88,29 +125,17 @@ def patch(index_path: Path) -> bool:
         print("Parte 1/2 aplicada: getter navigator.serviceWorker.ready sobrescrito.")
         changed = True
 
-    # Parte 2: faz runExportedApp esperar o ready patcheado antes de criar o iframe
+    # Parte 2: substitui (idempotente) o bloco entre o import e runExportedApp({
     if MARKER_2 in html:
-        print(f"Parte 2/2 ja aplicada (marcador '{MARKER_2}' encontrado).")
+        print(f"Parte 2/2 ja aplicada e atualizada (marcador '{MARKER_2}' encontrado).")
     else:
-        needle2 = 'import { runExportedApp } from "./shinylive/shinylive.js";\n      runExportedApp({'
-        if needle2 not in html:
+        if not IMPORT_TO_CALL_RE.search(html):
             raise SystemExit(
-                "Nao encontrei o ponto de insercao da parte 2 (chamada runExportedApp). "
+                "Nao encontrei o ponto de insercao da parte 2 (import ... runExportedApp({). "
                 "O formato do index.html exportado pode ter mudado - ajuste o script."
             )
-        replacement2 = (
-            'import { runExportedApp } from "./shinylive/shinylive.js";\n'
-            '      // Fix (parte 2/2): espera o Service Worker realmente assumir o\n'
-            '      // controle (usando o getter .ready ja corrigido acima) antes de criar\n'
-            '      // o iframe interno do app - sem isso a parte 1 sozinha nao adianta,\n'
-            '      // pois o iframe e criado cedo demais de qualquer forma.\n'
-            '      if (navigator.serviceWorker) {\n'
-            '        await navigator.serviceWorker.ready;\n'
-            '      }\n'
-            '      runExportedApp({'
-        )
-        html = html.replace(needle2, replacement2, 1)
-        print("Parte 2/2 aplicada: runExportedApp agora espera o SW estar no controle.")
+        html = IMPORT_TO_CALL_RE.sub(lambda m: WAIT_BLOCK, html, count=1)
+        print("Parte 2/2 aplicada: runExportedApp agora espera o controle REAL (sem atalho).")
         changed = True
 
     if changed:
