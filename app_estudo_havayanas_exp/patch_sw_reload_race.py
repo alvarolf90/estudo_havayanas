@@ -38,13 +38,28 @@ e a rota virtual do iframe interno do app (tipo app_<hash>/):
 
 Como um iframe novo so surge organicamente via um reload da pagina
 inteira (o React remonta tudo do zero, incluindo um iframe com uma
-"chance" nova), a estrategia agora e: se o iframe cair nesse 404 real
-do GitHub Pages, recarregar a PAGINA INTEIRA (nao so o iframe) - no
-maximo 1 vez por aba, pra nao entrar em loop se o dispositivo realmente
-nao conseguir de jeito nenhum (nesse caso o usuario fica no erro depois
-dessa 1 tentativa extra, em vez de ficar recarregando pra sempre).
+"chance" nova), a primeira estrategia foi: se o iframe cair nesse 404
+real do GitHub Pages, recarregar a PAGINA INTEIRA (nao so o iframe).
 
-Quatro partes, cada uma com proposito e timeout PROPRIOS (nao
+4) Confirmado ao vivo em 2026-09-29 (deploy 57c2665): o reload de pagina
+   sozinho TAMBEM nao resolveu - o log mostrou DOIS carregamentos
+   seguidos (dois app_<hash> diferentes) falhando de forma identica.
+   Isso indica que o Service Worker continua sendo o MESMO durante um
+   reload simples (reload nao forca um novo register()+activate()) -
+   entao se o SW "travou" nesse estado ruim (nao interceptando fetches
+   de iframe), so recarregar a pagina nao troca o SW, e o problema se
+   repete. Por isso agora, antes de recarregar, a gente desregistra
+   TODAS as registrations de Service Worker (navigator.serviceWorker.
+   getRegistrations().unregister()) - isso forca o proximo load a
+   registrar e ativar um SW genuinamente novo do zero, nao so uma
+   pagina nova com o SW velho.
+
+No maximo 1 tentativa (desregistrar + recarregar) por aba, pra nao
+entrar em loop se o dispositivo realmente nao conseguir de jeito nenhum
+(nesse caso o usuario fica no erro depois dessa 1 tentativa extra, em
+vez de ficar recarregando pra sempre).
+
+Cinco partes, cada uma com proposito e timeout PROPRIOS (nao
 compartilhados entre si):
 
 1. Sobrescreve navigator.serviceWorker.ready pra so resolver quando o
@@ -61,8 +76,9 @@ compartilhados entre si):
 3. Observa o iframe interno (via MutationObserver) e, se ele navegar
    pra uma rota app_<hash>/ e cair no 404 real do GitHub Pages
    (identificado pelo titulo do documento carregado, "... GitHub
-   Pages"), recarrega a pagina inteira - no maximo 1 vez por aba
-   (contador proprio, separado do da parte 1).
+   Pages"), desregistra o Service Worker e SO DEPOIS recarrega a
+   pagina inteira - no maximo 1 vez por aba (contador proprio,
+   separado do da parte 1).
 
 Este script precisa ser rodado toda vez depois de `shinylive::export()`,
 pois o export regenera docs/index.html do zero (sem o patch). E
@@ -79,7 +95,7 @@ from pathlib import Path
 
 MARKER_1 = "shinylive-sw-reloaded"
 MARKER_2 = "espera-controle-real-sem-atalho-de-timeout"
-MARKER_3 = "recarrega-pagina-se-iframe-cair-no-404-do-github-pages"
+MARKER_3 = "desregistra-sw-e-recarrega-se-iframe-cair-no-404-do-github-pages"
 
 PATCH_SCRIPT = """<script>
     // Fix (parte 1/3): posit-dev/shinylive#133 - navigator.serviceWorker.ready
@@ -171,7 +187,7 @@ WAIT_BLOCK = """import { runExportedApp } from "./shinylive/shinylive.js";
             } catch (e) {}
             if (count >= 1) {
               console.log(
-                "[fix iframe 404] ja tentou recarregar a pagina uma vez e o problema persistiu - desistindo."
+                "[fix iframe 404] ja tentou desregistrar o SW e recarregar uma vez e o problema persistiu - desistindo."
               );
               return;
             }
@@ -179,9 +195,23 @@ WAIT_BLOCK = """import { runExportedApp } from "./shinylive/shinylive.js";
               sessionStorage.setItem(reloadKey, String(count + 1));
             } catch (e) {}
             console.log(
-              "[fix iframe 404] iframe caiu no 404 do GitHub Pages - recarregando a pagina inteira pra tentar de novo do zero."
+              "[fix iframe 404] iframe caiu no 404 do GitHub Pages - desregistrando o Service Worker (nao so recarregando a pagina, que manteria o MESMO SW no controle) antes de tentar de novo do zero."
             );
-            window.location.reload();
+            Promise.resolve(
+              navigator.serviceWorker
+                ? navigator.serviceWorker.getRegistrations().then(function (regs) {
+                    return Promise.all(
+                      regs.map(function (r) {
+                        return r.unregister();
+                      })
+                    );
+                  })
+                : null
+            )
+              .catch(function () {})
+              .then(function () {
+                window.location.reload();
+              });
           });
         }
         new MutationObserver(function () {
@@ -233,8 +263,8 @@ def patch(index_path: Path) -> bool:
             )
         html = IMPORT_TO_CALL_RE.sub(lambda m: WAIT_BLOCK, html, count=1)
         print(
-            "Partes 2/3 e 3/3 aplicadas: espera o controle real do SW e recarrega "
-            "a pagina inteira (no maximo 1 vez) se o iframe cair no 404 do GitHub Pages."
+            "Partes 2/3 e 3/3 aplicadas: espera o controle real do SW e, se o iframe "
+            "cair no 404 do GitHub Pages, desregistra o SW e recarrega (no maximo 1 vez)."
         )
         changed = True
 

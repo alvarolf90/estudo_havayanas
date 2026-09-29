@@ -60,7 +60,7 @@
           navigator.serviceWorker.addEventListener("controllerchange", resolve, { once: true });
         });
       }
-      // Fix (parte 3/3 - recarrega-pagina-se-iframe-cair-no-404-do-github-pages): mesmo com o SW ja controlando a
+      // Fix (parte 3/3 - desregistra-sw-e-recarrega-se-iframe-cair-no-404-do-github-pages): mesmo com o SW ja controlando a
       // pagina (espera acima ja resolvida), a navegacao do iframe pra rota
       // virtual app_<hash>/ as vezes ainda passa direto pra rede (bug do
       // WebKit de nao registrar esse iframe especifico como "client"
@@ -74,7 +74,7 @@
       (function () {
         var root = document.getElementById("root");
         if (!root) return;
-        var reloadKey = "recarrega-pagina-se-iframe-cair-no-404-do-github-pages";
+        var reloadKey = "desregistra-sw-e-recarrega-se-iframe-cair-no-404-do-github-pages";
         var seen = new WeakSet();
         function watch(iframe) {
           if (seen.has(iframe)) return;
@@ -94,7 +94,7 @@
             } catch (e) {}
             if (count >= 1) {
               console.log(
-                "[fix iframe 404] ja tentou recarregar a pagina uma vez e o problema persistiu - desistindo."
+                "[fix iframe 404] ja tentou desregistrar o SW e recarregar uma vez e o problema persistiu - desistindo."
               );
               return;
             }
@@ -102,9 +102,23 @@
               sessionStorage.setItem(reloadKey, String(count + 1));
             } catch (e) {}
             console.log(
-              "[fix iframe 404] iframe caiu no 404 do GitHub Pages - recarregando a pagina inteira pra tentar de novo do zero."
+              "[fix iframe 404] iframe caiu no 404 do GitHub Pages - desregistrando o Service Worker (nao so recarregando a pagina, que manteria o MESMO SW no controle) antes de tentar de novo do zero."
             );
-            window.location.reload();
+            Promise.resolve(
+              navigator.serviceWorker
+                ? navigator.serviceWorker.getRegistrations().then(function (regs) {
+                    return Promise.all(
+                      regs.map(function (r) {
+                        return r.unregister();
+                      })
+                    );
+                  })
+                : null
+            )
+              .catch(function () {})
+              .then(function () {
+                window.location.reload();
+              });
           });
         }
         new MutationObserver(function () {
