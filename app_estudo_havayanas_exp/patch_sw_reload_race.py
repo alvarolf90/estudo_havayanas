@@ -80,6 +80,25 @@ compartilhados entre si):
    pagina inteira - no maximo 1 vez por aba (contador proprio,
    separado do da parte 1).
 
+5) Teoria do usuario (2026-09-29), corroborada pelos HARs: o app "funcionava
+   em todo lugar" quando era mais simples/menor, e comecou a falhar
+   consistentemente conforme cresceu. Analise dos HARs mostrou um gap de
+   ~4.8s SEM NENHUMA requisicao de rede no meio do carregamento (entre
+   library.data.gz terminar e packages/metadata.rds comecar) - uma janela
+   "parada" (rede ociosa, mas CPU ocupada rodando o webR/R). Suspeita: o
+   iOS pode achar que o Service Worker esta ocioso durante esse gap e
+   suspende-lo/mata-lo pra liberar memoria (comportamento normal de gestao
+   de recursos do iOS pra SWs, que ficam sem eventos de rede por um
+   tempo) - e um SW suspenso nesse momento explicaria a falha de
+   interceptar a navegacao do iframe logo em seguida. Quanto maior o app
+   (mais pacotes R, mais codigo), mais longo esse gap de inicializacao,
+   maior a chance do SW ser suspenso antes do iframe navegar. Mitigacao:
+   mandar um "ping" inofensivo pro SW a cada 1s durante a fase de
+   carregamento, pra tentar manter ele "vivo" aos olhos do iOS. O proprio
+   shinylive-sw.js ja ignora silenciosamente qualquer mensagem que nao
+   seja do tipo "configureProxyPath" (visto no codigo-fonte gerado), entao
+   esse ping e seguro sem precisar alterar o arquivo do SW.
+
 Este script precisa ser rodado toda vez depois de `shinylive::export()`,
 pois o export regenera docs/index.html do zero (sem o patch). E
 idempotente: pode ser rodado varias vezes sem duplicar nada, e se
@@ -96,6 +115,7 @@ from pathlib import Path
 MARKER_1 = "shinylive-sw-reloaded"
 MARKER_2 = "espera-controle-real-sem-atalho-de-timeout"
 MARKER_3 = "desregistra-sw-com-timeout-e-recarrega-se-iframe-cair-no-404"
+MARKER_4 = "mantem-sw-vivo-durante-carregamento-com-ping"
 
 PATCH_SCRIPT = """<script>
     // Fix (parte 1/3): posit-dev/shinylive#133 - navigator.serviceWorker.ready
@@ -136,6 +156,37 @@ PATCH_SCRIPT = """<script>
     })();
     </script>
     """.replace("REPLACE_MARKER_1", MARKER_1)
+
+KEEPALIVE_SCRIPT = """<script>
+    // Fix (parte 4 - REPLACE_MARKER_4): mantem o Service Worker "vivo" durante
+    // a fase de carregamento do app, que pode ficar varios segundos sem
+    // NENHUMA requisicao de rede enquanto o webR/R inicializa (so CPU
+    // rodando) - ver item 5 no topo deste script de patch pra teoria/
+    // evidencia completa. Manda um ping inofensivo pro SW a cada 1s
+    // enquanto a pagina carrega, limitado a REPLACE_MAX_PINGSs de
+    // seguranca (bem mais que o suficiente pro carregamento do app).
+    // O shinylive-sw.js ja ignora silenciosamente qualquer mensagem que
+    // nao seja do tipo "configureProxyPath", entao esse ping e seguro sem
+    // precisar alterar o arquivo gerado do SW.
+    (function () {
+      if (!navigator.serviceWorker) return;
+      var count = 0;
+      var maxPings = REPLACE_MAX_PINGS;
+      var timer = setInterval(function () {
+        count++;
+        if (count > maxPings) {
+          clearInterval(timer);
+          return;
+        }
+        if (navigator.serviceWorker.controller) {
+          try {
+            navigator.serviceWorker.controller.postMessage({ type: "keepAlivePing" });
+          } catch (e) {}
+        }
+      }, 1000);
+    })();
+    </script>
+    """.replace("REPLACE_MARKER_4", MARKER_4).replace("REPLACE_MAX_PINGS", "90")
 
 # Bloco que vai ANTES de "runExportedApp({" - substitui qualquer versao
 # anterior (inclusive a tentativa de retry no mesmo iframe, que nao
@@ -264,6 +315,21 @@ def patch(index_path: Path) -> bool:
             )
         html = html.replace(needle1, PATCH_SCRIPT + needle1, 1)
         print("Parte 1/3 aplicada: getter navigator.serviceWorker.ready sobrescrito.")
+        changed = True
+
+    # Parte 4: ping periodico pro SW durante o carregamento (independente das
+    # partes 1/2/3 - insercao/idempotencia proprias).
+    if MARKER_4 in html:
+        print(f"Parte 4 ja aplicada (marcador '{MARKER_4}' encontrado).")
+    else:
+        needle4 = '    <script\n      src="./shinylive/load-shinylive-sw.js"'
+        if needle4 not in html:
+            raise SystemExit(
+                "Nao encontrei o ponto de insercao da parte 4 (script load-shinylive-sw.js). "
+                "O formato do index.html exportado pode ter mudado - ajuste o script."
+            )
+        html = html.replace(needle4, KEEPALIVE_SCRIPT + needle4, 1)
+        print("Parte 4 aplicada: ping periodico pro Service Worker durante o carregamento.")
         changed = True
 
     # Partes 2 e 3: substitui (idempotente) o bloco entre o import e runExportedApp({

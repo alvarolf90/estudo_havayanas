@@ -42,6 +42,35 @@
       });
     })();
     </script>
+    <script>
+    // Fix (parte 4 - mantem-sw-vivo-durante-carregamento-com-ping): mantem o Service Worker "vivo" durante
+    // a fase de carregamento do app, que pode ficar varios segundos sem
+    // NENHUMA requisicao de rede enquanto o webR/R inicializa (so CPU
+    // rodando) - ver item 5 no topo deste script de patch pra teoria/
+    // evidencia completa. Manda um ping inofensivo pro SW a cada 1s
+    // enquanto a pagina carrega, limitado a 90s de
+    // seguranca (bem mais que o suficiente pro carregamento do app).
+    // O shinylive-sw.js ja ignora silenciosamente qualquer mensagem que
+    // nao seja do tipo "configureProxyPath", entao esse ping e seguro sem
+    // precisar alterar o arquivo gerado do SW.
+    (function () {
+      if (!navigator.serviceWorker) return;
+      var count = 0;
+      var maxPings = 90;
+      var timer = setInterval(function () {
+        count++;
+        if (count > maxPings) {
+          clearInterval(timer);
+          return;
+        }
+        if (navigator.serviceWorker.controller) {
+          try {
+            navigator.serviceWorker.controller.postMessage({ type: "keepAlivePing" });
+          } catch (e) {}
+        }
+      }, 1000);
+    })();
+    </script>
         <script
       src="./shinylive/load-shinylive-sw.js"
       type="module"
