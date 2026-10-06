@@ -184,6 +184,7 @@ ui <- page_sidebar(
         }
       };
       window.preloadSamples();
+      window.instFora = function(m, inst) { return !!(m && m.fora && m.fora.indexOf(inst) !== -1); };
 
       // ==========================================================================
       // SEQUENCIAS PROGRAMADAS (link com a sequencia embutida na URL)
@@ -406,7 +407,7 @@ ui <- page_sidebar(
 
               if (i === 3 && window.measureQueue[0] && window.measureQueue[0].nome.toLowerCase() === 'c2') {
                   Object.keys(window.measureQueue[0].strings).forEach(inst => {
-                      if (inst === 'Caixa' || inst === 'Repique') {
+                      if ((inst === 'Caixa' || inst === 'Repique') && !window.instFora(window.measureQueue[0], inst)) {
                           let t1 = beepTime + (beatDur * 0.75);
                           let t2 = beepTime + (beatDur * 0.875);
                           let isP = (inst === window.instPrincipal);
@@ -418,7 +419,7 @@ ui <- page_sidebar(
 
               if (i === 2 && window.measureQueue[0] && window.measureQueue[0].nome.toLowerCase() === 'pagodão') {
                   Object.keys(window.measureQueue[0].strings).forEach(inst => {
-                      if (inst === 'Dobra' || inst === 'Fundo 1' || inst === 'Fundo 2') {
+                      if ((inst === 'Dobra' || inst === 'Fundo 1' || inst === 'Fundo 2') && !window.instFora(window.measureQueue[0], inst)) {
                           let t1 = beepTime + (beatDur * 0.5);
                           let isP = (inst === window.instPrincipal);
                           playSyntheticSound('le', t1, '1', inst, window.timbre, isP);
@@ -427,7 +428,7 @@ ui <- page_sidebar(
               }
               if (i === 3 && window.measureQueue[0] && window.measureQueue[0].nome.toLowerCase() === 'pagodão') {
                   Object.keys(window.measureQueue[0].strings).forEach(inst => {
-                      if (inst === 'Dobra' || inst === 'Fundo 1' || inst === 'Fundo 2') {
+                      if ((inst === 'Dobra' || inst === 'Fundo 1' || inst === 'Fundo 2') && !window.instFora(window.measureQueue[0], inst)) {
                           let t1 = beepTime;
                           let t2 = beepTime + (beatDur * 0.5);
                           let isP = (inst === window.instPrincipal);
@@ -532,6 +533,7 @@ ui <- page_sidebar(
 
               $('#status_texto').text('Tocando...');
               $('#nome_padrao_atual').text(m.nome);
+              if (m.principal_fora) { $('#nome_padrao_atual').append('<div style=\"font-size:0.75rem; color:#e67e22; font-weight:bold; margin-top:4px;\">Seu instrumento espera neste passo</div>'); }
               $('#imagem_sinal_atual').html(m.img ? '<img src=\"' + m.img + '\" style=\"max-height: 55px; max-width: 100%; object-fit: contain; filter: grayscale(40%); opacity: 0.9;\">' : '<div style=\"height: 55px;\">-</div>');
 
               if (window.isLoop) {
@@ -812,6 +814,14 @@ ui <- page_sidebar(
           condition = "input.seq_tipo_passo == 'convencao'",
           selectInput("seq_padrao_convencao", "Convenção:", choices = convencoes_disponiveis, width = "100%")
         ),
+        div(style = "margin-top: 4px;",
+            tags$label("Quem toca neste passo:", style = "font-weight: bold; font-size: 0.9em;"),
+            div(style = "display: flex; gap: 6px; margin: 2px 0 4px 0;",
+                actionButton("seq_inst_todos", "Todos", class = "btn-sm btn-outline-secondary"),
+                actionButton("seq_inst_nenhum", "Nenhum", class = "btn-sm btn-outline-secondary")
+            ),
+            checkboxGroupInput("seq_instrumentos_passo", NULL, choices = instrumentos_disponiveis, selected = instrumentos_disponiveis, inline = TRUE)
+        ),
         div(style = "text-align: center; margin: 10px 0 20px 0;",
             actionButton("btn_add_passo", "+ Adicionar à sequência", icon = icon("plus"), class = "btn-outline-primary")
         ),
@@ -862,7 +872,7 @@ server <- function(input, output, session) {
   output$titulo_instrumento <- renderText({ paste("Leitura -", input$instrumento) })
   
   estado <- reactiveValues(
-    rodando = FALSE, exibir_box_atual = TRUE, exibir_leitura = TRUE, veio_de_convencao = TRUE, pula_entrada = FALSE, nota_forcada = "",
+    rodando = FALSE, exibir_box_atual = TRUE, exibir_leitura = TRUE, veio_de_convencao = TRUE, pula_entrada = FALSE, inst_atual = "*", inst_proximo = "*", nota_forcada = "",
     fase_atual = "Levada", padrao_atual = "", compassos_restantes = 0, compassos_tocados = 0,
     proxima_fase = "", proximo_padrao = "", proximos_compassos = 0,
     modo_sequencia = FALSE, sequencia_passos = list(), sequencia_indice = 1, sequencia_fim = FALSE, sequencia_nome = "",
@@ -958,6 +968,7 @@ server <- function(input, output, session) {
     estado$proxima_fase <- ""
     estado$compassos_tocados <- 0
     estado$pula_entrada <- FALSE
+    estado$inst_atual <- "*"; estado$inst_proximo <- "*"
     estado$nota_forcada <- ""
     estado$sequencia_indice <- 1
     estado$sequencia_fim <- FALSE
@@ -992,6 +1003,13 @@ server <- function(input, output, session) {
     } else {
       return(2)
     }
+  }
+  
+  # Instrumentos que tocam num passo da sequência: "*" = todos (passos antigos/sem lista)
+  inst_do_passo <- function(passo) {
+    x <- as.character(unlist(passo$instrumentos))
+    x <- x[!is.na(x) & nzchar(x)]
+    if (length(x) == 0) "*" else x
   }
   
   # TRUE se a levada tem Pula_Entrada=Sim em qualquer linha do CSV (varre todas as linhas,
@@ -1073,6 +1091,7 @@ server <- function(input, output, session) {
     # compasso de entrada quando vêm logo depois de outra levada ou de uma convenção
     # (exceto Pausa, que conta como silêncio). Início da sessão/Pausa: mantém a entrada.
     estado$pula_entrada <- (fase_anterior == "Levada") || (fase_anterior == "Convenção" && !identical(padrao_anterior, "Pausa"))
+    estado$inst_atual <- estado$inst_proximo
     estado$fase_atual <- estado$proxima_fase
     estado$padrao_atual <- estado$proximo_padrao
     
@@ -1090,6 +1109,7 @@ server <- function(input, output, session) {
         passos <- estado$sequencia_passos
         if (idx > length(passos)) { estado$sequencia_fim <- TRUE; return() }
         passo <- passos[[idx]]
+        estado$inst_proximo <- inst_do_passo(passo)
         estado$sequencia_indice <- idx + 1
         if (identical(passo$tipo, "levada")) {
           estado$proxima_fase <- "Levada"
@@ -1129,6 +1149,10 @@ server <- function(input, output, session) {
     nf <- if (estado$compassos_tocados == 0) estado$nota_forcada else ""
     insts_tocar <- if (isTRUE(estado$modo_sequencia)) unique(c(instrumento_ativo(), input$seq_acompanhamento_ativo)) else unique(c(input$instrumento, input$acompanhamento_ativo))
     strings_comp <- list(); str_variada <- "-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --"
+    str_silencio <- "-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --"
+    em_seq <- isTRUE(estado$modo_sequencia)
+    inst_passo <- if (em_seq) estado$inst_atual else "*"
+    fora <- character(0)
     
     if (estado$padrao_atual == "Variada") {
       opcoes_sel <- input$variada_opcoes; if (is.null(opcoes_sel) || length(opcoes_sel) == 0) opcoes_sel <- c("Pausa")
@@ -1138,6 +1162,10 @@ server <- function(input, output, session) {
     }
     
     for (inst in insts_tocar) {
+      # Sequência com lista de instrumentos por passo: quem não toca neste passo fica em silêncio
+      if (em_seq && !("*" %in% inst_passo) && !(inst %in% inst_passo)) {
+        strings_comp[[inst]] <- str_silencio; fora <- c(fora, inst); next
+      }
       if (inst == instrumento_ativo()) {
         if (estado$padrao_atual == "Variada") { comp_str <- str_variada; if (estado$compassos_tocados == 0 && nf != "") comp_str <- sub("^\\S+", nf, trimws(comp_str))
         } else { comp_str <- processar_compasso(estado$padrao_atual, inst, estado$fase_atual, estado$compassos_tocados, estado$veio_de_convencao, nf, estado$pula_entrada) }
@@ -1188,7 +1216,7 @@ server <- function(input, output, session) {
     
     res <- list(html = strings_comp[[instrumento_ativo()]], strings = strings_comp, nome = estado$padrao_atual, 
                 img = img_atual, restantes = estado$compassos_restantes, futuro = estado$proximo_padrao, futuro_img = img_prox,
-                fim_sequencia = FALSE)
+                fim_sequencia = FALSE, fora = as.list(fora), principal_fora = (instrumento_ativo() %in% fora))
     estado$compassos_restantes <- estado$compassos_restantes - 1; estado$compassos_tocados <- estado$compassos_tocados + 1
     preencher_proximo()
     if (isTRUE(estado$modo_sequencia) && isTRUE(estado$sequencia_fim) && estado$compassos_restantes <= 0) res$fim_sequencia <- TRUE
@@ -1226,6 +1254,7 @@ server <- function(input, output, session) {
         estado$sequencia_indice <- 1
         estado$sequencia_fim <- FALSE
         primeiro <- estado$sequencia_passos[[1]]
+        estado$inst_atual <- inst_do_passo(primeiro)
         estado$sequencia_indice <- 2
         if (identical(primeiro$tipo, "levada")) {
           estado$fase_atual <- "Levada"
@@ -1293,7 +1322,19 @@ server <- function(input, output, session) {
     }
   })
 
+  observeEvent(input$seq_inst_todos, {
+    updateCheckboxGroupInput(session, "seq_instrumentos_passo", selected = instrumentos_disponiveis)
+  })
+  observeEvent(input$seq_inst_nenhum, {
+    updateCheckboxGroupInput(session, "seq_instrumentos_passo", selected = character(0))
+  })
+  
   observeEvent(input$btn_add_passo, {
+    sel_inst <- input$seq_instrumentos_passo
+    if (length(sel_inst) == 0) {
+      showNotification("Marque pelo menos um instrumento que toca neste passo (para silêncio total, use a convenção Pausa).", type = "warning")
+      return()
+    }
     if (identical(input$seq_tipo_passo, "levada")) {
       req(input$seq_padrao_levada)
       novo <- list(tipo = "levada", padrao = input$seq_padrao_levada, compassos = as.numeric(input$seq_compassos_passo))
@@ -1301,6 +1342,8 @@ server <- function(input, output, session) {
       req(input$seq_padrao_convencao)
       novo <- list(tipo = "convencao", padrao = input$seq_padrao_convencao)
     }
+    # Só guarda a lista quando nem todos tocam (passos "com todos" ficam como antes, link mais curto)
+    if (length(sel_inst) < length(instrumentos_disponiveis)) novo$instrumentos <- as.character(sel_inst)
     estado$passos_sequencia_editor[[length(estado$passos_sequencia_editor) + 1]] <- novo
   })
   
@@ -1331,6 +1374,7 @@ server <- function(input, output, session) {
     linhas <- lapply(seq_along(passos), function(i) {
       p <- passos[[i]]
       rotulo <- if (identical(p$tipo, "levada")) paste0(i, ". ", p$padrao, " (", p$compassos, " compassos)") else paste0(i, ". [Convenção] ", p$padrao)
+      if (!is.null(p$instrumentos)) rotulo <- paste0(rotulo, " — toca: ", paste(p$instrumentos, collapse = ", "))
       seta_cima <- if (i > 1) tags$a(icon("arrow-up"), href = "#", onclick = sprintf("Shiny.setInputValue('mover_passo_seq', {i: %d, dir: -1}, {priority:'event'}); return false;", i), style = "margin-right: 10px; color: #5E2157;") else NULL
       seta_baixo <- if (i < length(passos)) tags$a(icon("arrow-down"), href = "#", onclick = sprintf("Shiny.setInputValue('mover_passo_seq', {i: %d, dir: 1}, {priority:'event'}); return false;", i), style = "margin-right: 10px; color: #5E2157;") else NULL
       
