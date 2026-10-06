@@ -599,6 +599,13 @@ ui <- page_sidebar(
           let beatDur = 60.0 / window.bpm; let delayMs = Math.max(0, (startTime - window.audioCtx.currentTime) * 1000);
           let currentMet = window.metadeAtiva;
 
+          // Metronomo na Pausa: mesmo bipe da contagem inicial, 1 por tempo
+          if (m && typeof m.nome === 'string' && m.nome.toLowerCase() === 'pausa') {
+              for (let mb = 0; mb < 4; mb++) {
+                  playOscillator(880, startTime + (mb * beatDur), 0.05, 0.5, 'sine');
+              }
+          }
+
           setTimeout(() => {
               if(!window.isPlaying) return;
 
