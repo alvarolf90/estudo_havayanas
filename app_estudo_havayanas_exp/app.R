@@ -243,20 +243,53 @@ ui <- page_sidebar(
       };
 
 
-      Shiny.addCustomMessageHandler('gerarLinkSequencia', function(seqObj) {
-        var codigo = window.codificarSequencia(seqObj);
+      // Formato compacto: prefixo 'z' + deflate-raw + base64url (links antigos, sem prefixo, continuam validos)
+      window.bytesParaB64url = function(bytes) {
+        var s = '';
+        for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+        return btoa(s).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');
+      };
+      window.b64urlParaBytes = function(str) {
+        var b64 = str.replace(/-/g, '+').replace(/_/g, '/');
+        while (b64.length % 4) b64 += '=';
+        var s = atob(b64);
+        var bytes = new Uint8Array(s.length);
+        for (var i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i);
+        return bytes;
+      };
+      window.comprimirSequencia = async function(obj) {
+        var antigo = window.codificarSequencia(obj);
+        try {
+          if (typeof CompressionStream === 'undefined') return antigo;
+          var bytes = new TextEncoder().encode(JSON.stringify(obj));
+          var cs = new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+          var buf = await new Response(cs).arrayBuffer();
+          var novo = 'z' + window.bytesParaB64url(new Uint8Array(buf));
+          return novo.length < antigo.length ? novo : antigo;
+        } catch (e) { return antigo; }
+      };
+      window.descomprimirSequencia = async function(str) {
+        if (str.charAt(0) !== 'z') return window.decodificarSequencia(str);
+        var bytes = window.b64urlParaBytes(str.substring(1));
+        var ds = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+        var txt = await new Response(ds).text();
+        return JSON.parse(txt);
+      };
+
+      Shiny.addCustomMessageHandler('gerarLinkSequencia', async function(seqObj) {
+        var codigo = await window.comprimirSequencia(seqObj);
         var base = window.top.location.origin + window.top.location.pathname;
         var url = base + '#seq=' + codigo;
         var qr = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(url);
         Shiny.setInputValue('link_sequencia_gerado', {url: url, qr: qr}, {priority: 'event'});
       });
 
-      function verificarSequenciaNaURL() {
+      async function verificarSequenciaNaURL() {
         var hash = window.top.location.hash;
         if (hash && hash.indexOf('#seq=') === 0) {
           try {
             var codigo = hash.substring(5);
-            var seqObj = window.decodificarSequencia(codigo);
+            var seqObj = await window.descomprimirSequencia(codigo);
             window.sequenciaModo = true;
             Shiny.setInputValue('sequencia_da_url', seqObj, {priority: 'event'});
           } catch (e) {
@@ -1592,6 +1625,7 @@ server <- function(input, output, session) {
     updateCheckboxGroupInput(session, "seq_acompanhamento_ativo", choices = setdiff(instrumentos_disponiveis, estado$sequencia_instrumento), selected = character(0))
     
     shinyjs::hide("sidebar_principal")
+    shinyjs::runjs('$(".collapse-toggle").hide();')
     shinyjs::hide("seletor_modo")
     shinyjs::hide("cabecalho_livre")
     shinyjs::show("cabecalho_sequencia")
