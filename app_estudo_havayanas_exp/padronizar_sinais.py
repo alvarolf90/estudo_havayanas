@@ -6,7 +6,7 @@ import glob, os, sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
-PULAR = {"cabeca.png", "peleco.png", "peteco.png", "petele.png", "teleco.png"}  # partituras e foto
+PULAR = {"cabeca.png", "peleco.png", "peteco.png", "petele.png", "teleco.png", "pe_co.png", "petala.png"}  # partituras e foto
 ORIG = "../sinais_originais" if os.path.isdir("../sinais_originais") else "www"
 SAIDA = "../sinais_padronizados"
 REAIS = "../sinais_reais"      # mãos reais novas (têm prioridade sobre as imagens antigas)

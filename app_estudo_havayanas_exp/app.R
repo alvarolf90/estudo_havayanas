@@ -45,7 +45,7 @@ instrumentos_disponiveis <- unique(c(df_levadas$Instrumento, df_convencoes$Instr
 todos_padroes <- unique(c(levadas_disponiveis, convencoes_disponiveis))
 # Acha o arquivo de imagem do sinal (tolera "Forró 1" -> forro1.png ou forro_1.png)
 # Variadas sem sinal de mão: usam a partitura (arquivo com nome diferente do padrão)
-imagens_alias <- c("Pe--LeCo" = "peleco", "PeTe--Co" = "peteco", "PeTeLe--" = "petele")
+imagens_alias <- c("Pe--LeCo" = "peleco", "PeTe--Co" = "peteco", "PeTeLe--" = "petele", "Pe----Co" = "pe_co", "PeTaLa" = "petala")
 
 arquivo_imagem <- function(nome) {
   if (nome == "Pausa") return("")
