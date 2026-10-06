@@ -42,6 +42,16 @@ levadas_disponiveis <- unique(c(df_levadas$Levada, "Variada"))
 convencoes_disponiveis <- unique(df_convencoes$Convencao)
 instrumentos_disponiveis <- unique(c(df_levadas$Instrumento, df_convencoes$Instrumento))
 
+# Valor padrão quando NULL/vazio/NA (usado nas opções avançadas dos passos da sequência)
+nz <- function(x, d) if (is.null(x) || length(x) == 0 || is.na(x[1])) d else x
+# Opções "levada/convenção por instrumento" (Avançado do passo): prefixo L: ou C: no valor
+.lev_ov <- setdiff(levadas_disponiveis, "Variada")
+choices_override <- list(
+  "Mesma do passo" = "",
+  "Levadas" = setNames(paste0("L:", .lev_ov), .lev_ov),
+  "Convenções" = setNames(paste0("C:", convencoes_disponiveis), convencoes_disponiveis)
+)
+
 todos_padroes <- unique(c(levadas_disponiveis, convencoes_disponiveis))
 # Acha o arquivo de imagem do sinal (tolera "Forró 1" -> forro1.png ou forro_1.png)
 # Variadas sem sinal de mão: usam a partitura (arquivo com nome diferente do padrão)
@@ -850,6 +860,23 @@ ui <- page_sidebar(
             ),
             checkboxGroupInput("seq_instrumentos_passo", NULL, choices = instrumentos_disponiveis, selected = instrumentos_disponiveis, inline = TRUE)
         ),
+        tags$details(style = "margin: 6px 0 10px 0;",
+          tags$summary("Avançado: começar em outro compasso e levada/entrada por instrumento", style = "cursor: pointer; font-weight: bold; color: #5E2157; font-size: 0.9em;"),
+          div(style = "padding: 8px; border: 1px solid #eee; border-radius: 6px; margin-top: 6px;",
+            numericInput("seq_inicio_compasso", "Começar a partir do compasso nº (da levada/convenção):", value = 1, min = 1, max = 16, step = 1, width = "100%"),
+            p("Opcional, só para instrumentos marcados em 'Quem toca': outra levada/convenção e/ou entrada mais tarde. Compasso e tempo contam a partir do início deste passo (compasso 1, tempo 1).", style = "color: #7f8c8d; font-size: 0.8em; margin: 0 0 6px 0;"),
+            lapply(seq_along(instrumentos_disponiveis), function(k) {
+              div(style = "margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px dashed #eee;",
+                tags$label(instrumentos_disponiveis[k], style = "font-weight: bold; font-size: 0.85em; margin: 0;"),
+                selectInput(paste0("seq_ov_", k), NULL, choices = choices_override, selected = "", selectize = FALSE, width = "100%"),
+                div(style = "display: flex; gap: 10px; align-items: flex-end;",
+                  div(style = "flex: 1;", numericInput(paste0("seq_oc_", k), "Entra no compasso:", value = 1, min = 1, max = 32, step = 1, width = "100%")),
+                  div(style = "flex: 1;", selectInput(paste0("seq_ob_", k), "no tempo:", choices = c("1", "2", "3", "4"), selected = "1", selectize = FALSE, width = "100%"))
+                )
+              )
+            })
+          )
+        ),
         div(style = "text-align: center; margin: 10px 0 20px 0;",
             actionButton("btn_add_passo", "+ Adicionar à sequência", icon = icon("plus"), class = "btn-outline-primary")
         ),
@@ -904,7 +931,8 @@ server <- function(input, output, session) {
     fase_atual = "Levada", padrao_atual = "", compassos_restantes = 0, compassos_tocados = 0,
     proxima_fase = "", proximo_padrao = "", proximos_compassos = 0,
     modo_sequencia = FALSE, sequencia_passos = list(), sequencia_indice = 1, sequencia_fim = FALSE, sequencia_nome = "",
-    passos_sequencia_editor = list(), sequencia_bpm = NULL, sequencia_instrumento = NULL
+    passos_sequencia_editor = list(), sequencia_bpm = NULL, sequencia_instrumento = NULL,
+    inicio_atual = 1, inicio_proximo = 1, ov_atual = list(), ov_proximo = list(), meio_desloc = FALSE
   )
   
   bpm_ativo <- function() if (isTRUE(estado$modo_sequencia)) estado$sequencia_bpm else input$bpm
@@ -996,6 +1024,7 @@ server <- function(input, output, session) {
     estado$proxima_fase <- ""
     estado$compassos_tocados <- 0
     estado$pula_entrada <- FALSE
+    estado$inicio_atual <- 1; estado$inicio_proximo <- 1; estado$ov_atual <- list(); estado$ov_proximo <- list(); estado$meio_desloc <- FALSE
     estado$inst_atual <- "*"; estado$inst_proximo <- "*"
     estado$nota_forcada <- ""
     estado$sequencia_indice <- 1
@@ -1014,7 +1043,7 @@ server <- function(input, output, session) {
     if ("Duracao" %in% colnames(df_conv)) {
       durs <- df_conv$Duracao[df_conv$Convencao == padrao]
       durs <- durs[!is.na(durs) & trimws(as.character(durs)) != ""]
-      if (length(durs) > 0) return(as.numeric(durs[1]))
+      if (length(durs) > 0) return(as.numeric(sub(",", ".", trimws(as.character(durs[1])), fixed = TRUE)))
     }
     
     c2_str <- NULL
@@ -1033,6 +1062,16 @@ server <- function(input, output, session) {
     }
   }
   
+  # Duração de um passo de convenção: meio compasso (< 1) fica como está; senão desconta o "começar no compasso N"
+  dur_passo <- function(d, ini) if (d < 1) d else max(1, d - (ini - 1))
+  
+  # Nota forçada (Forca_Primeira_Nota) de uma convenção para o instrumento principal
+  forca_da_conv <- function(padrao) {
+    df_c <- df_convencoes[df_convencoes$Convencao == padrao & df_convencoes$Instrumento == instrumento_ativo(), ]
+    col <- if ("Forca_Primeira_Nota" %in% colnames(df_c)) "Forca_Primeira_Nota" else if ("Forca.Primeira.Nota" %in% colnames(df_c)) "Forca.Primeira.Nota" else NULL
+    if (!is.null(col) && nrow(df_c) > 0 && !is.na(df_c[[col]][1])) df_c[[col]][1] else ""
+  }
+  
   # Instrumentos que tocam num passo da sequência: "*" = todos (passos antigos/sem lista)
   inst_do_passo <- function(passo) {
     x <- as.character(unlist(passo$instrumentos))
@@ -1049,7 +1088,7 @@ server <- function(input, output, session) {
     any(toupper(trimws(as.character(vals))) %in% c("SIM", "S", "TRUE", "1"), na.rm = TRUE)
   }
   
-  processar_compasso <- function(padrao, instrumento, fase, tocados, veio_conv, nota_forcada = "", pula_entrada = FALSE) {
+  processar_compasso <- function(padrao, instrumento, fase, tocados, veio_conv, nota_forcada = "", pula_entrada = FALSE, desloc = 0) {
     if (fase == "Levada") { df <- df_levadas[df_levadas$Levada == padrao & df_levadas$Instrumento == instrumento, ] }
     else { df <- df_convencoes[df_convencoes$Convencao == padrao & df_convencoes$Instrumento == instrumento, ] }
     if (nrow(df) == 0) return("-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --")
@@ -1077,8 +1116,8 @@ server <- function(input, output, session) {
     
     # Pula o compasso de entrada (compasso 1) quando a levada vem logo depois de outra
     # levada/convenção (ver avancar_fase) e está marcada no CSV com Pula_Entrada=Sim
-    pular <- (fase == "Levada") && isTRUE(pula_entrada) && levada_pula_entrada(padrao)
-    tocados_idx <- if (pular) tocados + 1 else tocados
+    pular <- (fase == "Levada") && isTRUE(pula_entrada) && desloc == 0 && levada_pula_entrada(padrao)
+    tocados_idx <- (if (pular) tocados + 1 else tocados) + desloc
     
     # 3. Faz o looping matemático baseado na quantidade exata de compassos da levada
     if (is_loop_c2 && length(valores_validos) >= 2) { 
@@ -1090,7 +1129,7 @@ server <- function(input, output, session) {
     comp_str <- valores_validos[idx]
     
     if (fase == "Levada") { 
-      if (tocados == 0 && veio_conv && !pular) comp_str <- gsub("\\([^)]+\\)", "--", comp_str) 
+      if (tocados == 0 && desloc == 0 && veio_conv && !pular) comp_str <- gsub("\\([^)]+\\)", "--", comp_str) 
       else comp_str <- gsub("\\(|\\)", "", comp_str) 
     } else { 
       comp_str <- gsub("\\(|\\)", "", comp_str) 
@@ -1122,8 +1161,10 @@ server <- function(input, output, session) {
     estado$inst_atual <- estado$inst_proximo
     estado$fase_atual <- estado$proxima_fase
     estado$padrao_atual <- estado$proximo_padrao
+    estado$inicio_atual <- estado$inicio_proximo; estado$ov_atual <- estado$ov_proximo
     
     estado$compassos_restantes <- estado$proximos_compassos
+    estado$meio_desloc <- (fase_anterior == "Convenção") && (get_duracao(padrao_anterior, df_convencoes) < 1) && identical(estado$fase_atual, "Levada")
     
     estado$compassos_tocados <- 0
     estado$proximo_padrao <- ""
@@ -1139,6 +1180,9 @@ server <- function(input, output, session) {
         passo <- passos[[idx]]
         estado$inst_proximo <- inst_do_passo(passo)
         estado$sequencia_indice <- idx + 1
+        ini_n <- max(1, as.numeric(nz(passo$inicio, 1)))
+        estado$inicio_proximo <- ini_n
+        estado$ov_proximo <- if (is.null(passo$ov)) list() else passo$ov
         if (identical(passo$tipo, "levada")) {
           estado$proxima_fase <- "Levada"
           estado$proximo_padrao <- passo$padrao
@@ -1146,7 +1190,7 @@ server <- function(input, output, session) {
         } else {
           estado$proxima_fase <- "Convenção"
           estado$proximo_padrao <- passo$padrao
-          estado$proximos_compassos <- get_duracao(passo$padrao, df_convencoes)
+          estado$proximos_compassos <- dur_passo(get_duracao(passo$padrao, df_convencoes), ini_n)
         }
         return()
       }
@@ -1182,34 +1226,76 @@ server <- function(input, output, session) {
     inst_passo <- if (em_seq) estado$inst_atual else "*"
     fora <- character(0)
     
-    if (estado$padrao_atual == "Variada") {
+    # Contextos de passo: o atual e (na meia convenção) o próximo
+    ctx_atual <- list(fase = estado$fase_atual, padrao = estado$padrao_atual, inicio = estado$inicio_atual, ov = estado$ov_atual, inst = inst_passo, pula = estado$pula_entrada, veio = estado$veio_de_convencao)
+    ctx_prox <- list(fase = estado$proxima_fase, padrao = estado$proximo_padrao, inicio = estado$inicio_proximo, ov = estado$ov_proximo, inst = if (em_seq) estado$inst_proximo else "*", pula = !identical(estado$padrao_atual, "Pausa"), veio = TRUE)
+    n_t <- estado$compassos_tocados
+    # Meia convenção (Duracao < 1): 1ª metade do compasso = convenção; 2ª metade = começo da próxima levada,
+    # que segue deslocada meio compasso (estado$meio_desloc) até o fim do passo seguinte
+    meia_conv <- identical(estado$fase_atual, "Convenção") && estado$compassos_restantes > 0 && estado$compassos_restantes < 1
+    desloc_meio <- isTRUE(estado$meio_desloc) && identical(estado$fase_atual, "Levada")
+    nf_meia <- if (meia_conv) forca_da_conv(estado$padrao_atual) else ""
+    if (meia_conv && estado$proximo_padrao == "Variada" || estado$padrao_atual == "Variada" ) {
       opcoes_sel <- input$variada_opcoes; if (is.null(opcoes_sel) || length(opcoes_sel) == 0) opcoes_sel <- c("Pausa")
       padroes_sel <- dict_variada[opcoes_sel]; batidas_sorteadas <- sample(padroes_sel, 4, replace = TRUE)
       if ("Pausa" %in% opcoes_sel && !(dict_variada[["Pausa"]] %in% batidas_sorteadas)) batidas_sorteadas[sample(1:4, 1)] <- dict_variada[["Pausa"]]
       str_variada <- paste(batidas_sorteadas, collapse = " | ")
     }
     
-    for (inst in insts_tocar) {
+    pad4 <- function(x) { t <- trimws(strsplit(x, "\\|")[[1]]); if (length(t) < 4) t <- c(t, rep("-- -- -- --", 4 - length(t))); t }
+    
+    # Compasso de um instrumento para um contexto de passo (atual ou próximo). tocados_i = compassos já tocados do passo
+    calc_um <- function(inst, ctx, tocados_i, nf_i) {
+      if (!nzchar(ctx$padrao)) return(list(str = str_silencio, fora = TRUE))
       # Sequência com lista de instrumentos por passo: quem não toca neste passo fica em silêncio
-      if (em_seq && !("*" %in% inst_passo) && !(inst %in% inst_passo)) {
-        strings_comp[[inst]] <- str_silencio; fora <- c(fora, inst); next
+      if (em_seq && !("*" %in% ctx$inst) && !(inst %in% ctx$inst)) return(list(str = str_silencio, fora = TRUE))
+      # Opções avançadas do passo: início em outro compasso, levada/convenção própria e entrada (compasso/tempo) por instrumento
+      fase_i <- ctx$fase; padrao_i <- ctx$padrao
+      desl <- if (em_seq) max(0, as.numeric(nz(ctx$inicio, 1)) - 1) else 0
+      ov_i <- if (em_seq) ctx$ov[[inst]] else NULL
+      ent_c <- 1; ent_b <- 1
+      if (!is.null(ov_i)) {
+        ent_c <- max(1, as.numeric(nz(ov_i$c, 1))); ent_b <- min(4, max(1, as.numeric(nz(ov_i$b, 1))))
+        if (tocados_i + 1 < ent_c) return(list(str = str_silencio, fora = TRUE))
+        pv <- nz(ov_i$p, "")
+        if (nzchar(pv)) { padrao_i <- pv; fase_i <- if (identical(ov_i$t, "C")) "Convenção" else "Levada" }
       }
-      if (inst == instrumento_ativo()) {
-        if (estado$padrao_atual == "Variada") { comp_str <- str_variada; if (estado$compassos_tocados == 0 && nf != "") comp_str <- sub("^\\S+", nf, trimws(comp_str))
-        } else { comp_str <- processar_compasso(estado$padrao_atual, inst, estado$fase_atual, estado$compassos_tocados, estado$veio_de_convencao, nf, estado$pula_entrada) }
-      } else {
+      pode_tocar <- TRUE
+      if (inst != instrumento_ativo() && !em_seq) {
         id_inst <- gsub(" ", "_", inst); ativas_l <- input[[paste0("acomp_lev_", id_inst)]]; ativas_c <- input[[paste0("acomp_conv_", id_inst)]]
-        pode_tocar <- FALSE
-        if (isTRUE(estado$modo_sequencia)) {
-          pode_tocar <- TRUE
-        } else {
-          if (estado$fase_atual == "Levada" && (estado$padrao_atual %in% ativas_l)) pode_tocar <- TRUE
-          if (estado$fase_atual == "Convenção" && (estado$padrao_atual %in% ativas_c)) pode_tocar <- TRUE
-        }
-        if (pode_tocar) {
-          if (estado$padrao_atual == "Variada") { comp_str <- str_variada; if (estado$compassos_tocados == 0 && nf != "") comp_str <- sub("^\\S+", nf, trimws(comp_str))
-          } else { comp_str <- processar_compasso(estado$padrao_atual, inst, estado$fase_atual, estado$compassos_tocados, estado$veio_de_convencao, nf, estado$pula_entrada) }
-        } else { comp_str <- "-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --" }
+        pode_tocar <- (ctx$fase == "Levada" && (ctx$padrao %in% ativas_l)) || (ctx$fase == "Convenção" && (ctx$padrao %in% ativas_c))
+      }
+      if (!pode_tocar) {
+        comp_str <- str_silencio
+      } else if (padrao_i == "Variada") {
+        comp_str <- str_variada; if (tocados_i == 0 && nf_i != "") comp_str <- sub("^\\S+", nf_i, trimws(comp_str))
+      } else {
+        comp_str <- processar_compasso(padrao_i, inst, fase_i, tocados_i, ctx$veio, nf_i, ctx$pula, desl)
+      }
+      if (!is.null(ov_i) && tocados_i + 1 == ent_c && ent_b > 1) {
+        tempos_m <- strsplit(comp_str, "\\|")[[1]]
+        ate <- min(length(tempos_m), ent_b - 1)
+        tempos_m[seq_len(ate)] <- " -- -- -- -- "
+        comp_str <- paste(tempos_m, collapse = "|")
+      }
+      list(str = comp_str, fora = FALSE)
+    }
+    
+    for (inst in insts_tocar) {
+      if (meia_conv) {
+        a <- calc_um(inst, ctx_atual, n_t, "")
+        b <- if (identical(estado$proxima_fase, "Levada")) calc_um(inst, ctx_prox, 0, nf_meia) else list(str = str_silencio, fora = TRUE)
+        comp_str <- paste(c(pad4(a$str)[1:2], pad4(b$str)[1:2]), collapse = " | ")
+        if (a$fora && b$fora) fora <- c(fora, inst)
+      } else if (desloc_meio) {
+        a <- calc_um(inst, ctx_atual, n_t, "")
+        b <- calc_um(inst, ctx_atual, n_t + 1, "")
+        comp_str <- paste(c(pad4(a$str)[3:4], pad4(b$str)[1:2]), collapse = " | ")
+        if (a$fora && b$fora) fora <- c(fora, inst)
+      } else {
+        a <- calc_um(inst, ctx_atual, n_t, nf)
+        comp_str <- a$str
+        if (a$fora) fora <- c(fora, inst)
       }
       
       if (estado$compassos_restantes == 1 && tolower(estado$proximo_padrao) == "c2" && inst %in% c("Caixa", "Repique")) {
@@ -1239,11 +1325,14 @@ server <- function(input, output, session) {
     }
     if (estado$compassos_tocados == 0) estado$nota_forcada <- "" 
     
-    img_atual <- if (nzchar(estado$padrao_atual)) map_imagens[[estado$padrao_atual]] else NULL; if(is.null(img_atual)) img_atual <- ""
+    ov_main <- if (em_seq) estado$ov_atual[[instrumento_ativo()]] else NULL
+    nome_exib <- estado$padrao_atual
+    if (!is.null(ov_main) && nzchar(nz(ov_main$p, ""))) nome_exib <- ov_main$p
+    img_atual <- if (nzchar(nome_exib)) map_imagens[[nome_exib]] else NULL; if(is.null(img_atual)) img_atual <- ""
     img_prox <- if (nzchar(estado$proximo_padrao)) map_imagens[[estado$proximo_padrao]] else NULL; if(is.null(img_prox)) img_prox <- ""
     
-    res <- list(html = strings_comp[[instrumento_ativo()]], strings = strings_comp, nome = estado$padrao_atual, 
-                img = img_atual, restantes = estado$compassos_restantes, futuro = estado$proximo_padrao, futuro_img = img_prox,
+    res <- list(html = strings_comp[[instrumento_ativo()]], strings = strings_comp, nome = nome_exib, 
+                img = img_atual, restantes = ceiling(estado$compassos_restantes), futuro = estado$proximo_padrao, futuro_img = img_prox,
                 fim_sequencia = FALSE, fora = as.list(fora), principal_fora = (instrumento_ativo() %in% fora))
     estado$compassos_restantes <- estado$compassos_restantes - 1; estado$compassos_tocados <- estado$compassos_tocados + 1
     preencher_proximo()
@@ -1277,12 +1366,16 @@ server <- function(input, output, session) {
       shinyjs::disable("seq_bpm_control"); shinyjs::disable("seq_acompanhamento_ativo")
       
       estado$veio_de_convencao <- TRUE; estado$pula_entrada <- FALSE; estado$nota_forcada <- ""
+      estado$inicio_atual <- 1; estado$inicio_proximo <- 1; estado$ov_atual <- list(); estado$ov_proximo <- list(); estado$meio_desloc <- FALSE
       
       if (isTRUE(estado$modo_sequencia)) {
         estado$sequencia_indice <- 1
         estado$sequencia_fim <- FALSE
         primeiro <- estado$sequencia_passos[[1]]
         estado$inst_atual <- inst_do_passo(primeiro)
+        ini_p <- max(1, as.numeric(nz(primeiro$inicio, 1)))
+        estado$inicio_atual <- ini_p
+        estado$ov_atual <- if (is.null(primeiro$ov)) list() else primeiro$ov
         estado$sequencia_indice <- 2
         if (identical(primeiro$tipo, "levada")) {
           estado$fase_atual <- "Levada"
@@ -1291,7 +1384,7 @@ server <- function(input, output, session) {
         } else {
           estado$fase_atual <- "Convenção"
           estado$padrao_atual <- primeiro$padrao
-          estado$compassos_restantes <- get_duracao(primeiro$padrao, df_convencoes)
+          estado$compassos_restantes <- dur_passo(get_duracao(primeiro$padrao, df_convencoes), ini_p)
         }
       } else {
         fases_possiveis <- c()
@@ -1370,6 +1463,30 @@ server <- function(input, output, session) {
       req(input$seq_padrao_convencao)
       novo <- list(tipo = "convencao", padrao = input$seq_padrao_convencao)
     }
+    # Opções avançadas: começar em outro compasso + levada/entrada por instrumento
+    ini <- suppressWarnings(as.integer(input$seq_inicio_compasso))
+    if (length(ini) == 0 || is.na(ini) || ini < 1) ini <- 1L
+    if (ini > 1) novo$inicio <- ini
+    ov <- list()
+    for (k in seq_along(instrumentos_disponiveis)) {
+      inst_k <- instrumentos_disponiveis[k]
+      if (!(inst_k %in% sel_inst)) next
+      v <- input[[paste0("seq_ov_", k)]]; if (is.null(v)) v <- ""
+      ec <- suppressWarnings(as.integer(input[[paste0("seq_oc_", k)]])); if (length(ec) == 0 || is.na(ec) || ec < 1) ec <- 1L
+      eb <- suppressWarnings(as.integer(input[[paste0("seq_ob_", k)]])); if (length(eb) == 0 || is.na(eb) || eb < 1) eb <- 1L
+      item <- list()
+      if (nzchar(v)) { item$t <- substr(v, 1, 1); item$p <- substring(v, 3) }
+      if (ec > 1) item$c <- ec
+      if (eb > 1) item$b <- eb
+      if (length(item) > 0) ov[[inst_k]] <- item
+    }
+    if (length(ov) > 0) novo$ov <- ov
+    updateNumericInput(session, "seq_inicio_compasso", value = 1)
+    for (k in seq_along(instrumentos_disponiveis)) {
+      updateSelectInput(session, paste0("seq_ov_", k), selected = "")
+      updateNumericInput(session, paste0("seq_oc_", k), value = 1)
+      updateSelectInput(session, paste0("seq_ob_", k), selected = "1")
+    }
     # Só guarda a lista quando nem todos tocam (passos "com todos" ficam como antes, link mais curto)
     if (length(sel_inst) < length(instrumentos_disponiveis)) novo$instrumentos <- as.character(sel_inst)
     estado$passos_sequencia_editor[[length(estado$passos_sequencia_editor) + 1]] <- novo
@@ -1403,6 +1520,16 @@ server <- function(input, output, session) {
       p <- passos[[i]]
       rotulo <- if (identical(p$tipo, "levada")) paste0(i, ". ", p$padrao, " (", p$compassos, " compassos)") else paste0(i, ". [Convenção] ", p$padrao)
       if (!is.null(p$instrumentos)) rotulo <- paste0(rotulo, " — toca: ", paste(p$instrumentos, collapse = ", "))
+      if (!is.null(p$inicio)) rotulo <- paste0(rotulo, " — a partir do compasso ", p$inicio)
+      if (length(p$ov) > 0) {
+        partes_ov <- vapply(names(p$ov), function(n) {
+          o <- p$ov[[n]]; txt <- n
+          if (!is.null(o$p)) txt <- paste0(txt, ": ", o$p)
+          if (!is.null(o$c) || !is.null(o$b)) txt <- paste0(txt, " (entra no compasso ", nz(o$c, 1), ", tempo ", nz(o$b, 1), ")")
+          txt
+        }, character(1))
+        rotulo <- paste0(rotulo, " — ", paste(partes_ov, collapse = "; "))
+      }
       seta_cima <- if (i > 1) tags$a(icon("arrow-up"), href = "#", onclick = sprintf("Shiny.setInputValue('mover_passo_seq', {i: %d, dir: -1}, {priority:'event'}); return false;", i), style = "margin-right: 10px; color: #5E2157;") else NULL
       seta_baixo <- if (i < length(passos)) tags$a(icon("arrow-down"), href = "#", onclick = sprintf("Shiny.setInputValue('mover_passo_seq', {i: %d, dir: 1}, {priority:'event'}); return false;", i), style = "margin-right: 10px; color: #5E2157;") else NULL
       

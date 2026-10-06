@@ -122,3 +122,9 @@ Conv. V2;Xequerê;-- -- -- -- | pe -- -- -- | -- -- -- -- | -- -- -- --;;;;1;pe
 Conv. V2;Repique;-- -- -- -- | pe.pe -- -- -- | -- -- -- -- | -- -- -- --;;;;1;pe
 Conv. V2;Fundo 1;pe te -- -- | -- -- -- -- | -- -- -- co | pe te le co;;;;1;pe
 Conv. V2;Fundo 2;pe te -- -- | -- -- -- -- | -- -- -- co | pe te le co;;;;1;pe
+Convencinha 6;Dobra;-- -- -- -- | pe.ta.la le -- ;;;;0,5;
+Convencinha 6;Caixa;pe.ta.la le -- | -- -- -- -- ;;;;0,5;
+Convencinha 6;Repique;pe.ta.la le -- | -- -- -- -- ;;;;0,5;
+Convencinha 6;Fundo 1;-- -- -- -- | pe.ta.la le -- ;;;;0,5;
+Convencinha 6;Fundo 2;-- -- -- -- | pe.ta.la le -- ;;;;0,5;
+Convencinha 6;Xequerê;pe -- le -- | pe -- le -- ;;;;0,5;
