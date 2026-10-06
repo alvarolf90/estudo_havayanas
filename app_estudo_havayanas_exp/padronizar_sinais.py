@@ -9,6 +9,8 @@ from PIL import Image, ImageDraw, ImageFilter
 PULAR = {"cabeca.png", "peleco.png", "peteco.png", "petele.png", "teleco.png"}  # partituras e foto
 ORIG = "../sinais_originais" if os.path.isdir("../sinais_originais") else "www"
 SAIDA = "../sinais_padronizados"
+REAIS = "../sinais_reais"      # mãos reais novas (têm prioridade sobre as imagens antigas)
+ALIAS = {"galope": "arrastape", "c5_-_pagodao": "c5"}   # mesmo sinal, nomes diferentes
 ALTURA, LARG_MAX, MARGEM = 150, 320, 3   # altura padrão (px), largura máxima, margem
 os.makedirs(SAIDA, exist_ok=True)
 
@@ -44,6 +46,10 @@ for f in sorted(glob.glob(os.path.join(ORIG, "*.png"))):
     nome = os.path.basename(f)
     if nome in PULAR:
         continue
+    base = os.path.splitext(nome)[0]
+    novo = os.path.join(REAIS, ALIAS.get(base, base) + ".png")
+    if os.path.exists(novo):
+        f = novo
     try:
         im = Image.open(f).convert("RGBA")   # paletas com transparência viram RGBA
     except Exception as e:
