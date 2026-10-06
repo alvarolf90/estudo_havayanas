@@ -44,8 +44,12 @@ instrumentos_disponiveis <- unique(c(df_levadas$Instrumento, df_convencoes$Instr
 
 todos_padroes <- unique(c(levadas_disponiveis, convencoes_disponiveis))
 # Acha o arquivo de imagem do sinal (tolera "Forró 1" -> forro1.png ou forro_1.png)
+# Variadas sem sinal de mão: usam a partitura (arquivo com nome diferente do padrão)
+imagens_alias <- c("Pe--LeCo" = "peleco", "PeTe--Co" = "peteco", "PeTeLe--" = "petele")
+
 arquivo_imagem <- function(nome) {
   if (nome == "Pausa") return("")
+  if (nome %in% names(imagens_alias)) return(paste0(imagens_alias[[nome]], ".png"))
   base <- limpar_nome_imagem(nome)
   candidatos <- unique(c(base, gsub("_([0-9])", "\\1", base)))
   for (cand in candidatos) {
@@ -62,9 +66,10 @@ rotulo_com_icone <- function(nome) {
   caixa <- if (tem) tags$img(src = paste0("ico/", arq), alt = "",
                              style = "max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px;")
            else NULL
-  tags$span(style = "display: inline-flex; align-items: center; gap: 10px;",
-            tags$span(style = "display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 40px; flex-shrink: 0;", caixa),
-            tags$span(nome))
+  # nome à esquerda, miniatura alinhada à direita
+  tags$span(class = "rotulo-sinal",
+            tags$span(nome),
+            tags$span(style = "display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 40px; flex-shrink: 0;", caixa))
 }
 
 arquivos_wav <- sapply(instrumentos_disponiveis, function(nome) {
@@ -105,6 +110,11 @@ ui <- page_sidebar(
       .btn-modo-tab { background-color: rgba(255,255,255,0.15); color: white; border: 2px solid white; font-weight: bold; padding: 10px 22px; border-radius: 30px; }
       .btn-modo-tab.btn-modo-ativo { background-color: white; color: #5E2157; }
       
+      /* Listas de levadas/convenções: checkbox | nome ........ miniatura do sinal */
+      #levadas_ativas .checkbox label, #conv_ativas .checkbox label { display: flex; align-items: center; width: 100%; }
+      #levadas_ativas .checkbox label input, #conv_ativas .checkbox label input { flex-shrink: 0; margin-right: 8px; }
+      #levadas_ativas .checkbox label > span, #conv_ativas .checkbox label > span { flex: 1 1 auto; min-width: 0; display: block; }
+      .rotulo-sinal { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex: 1 1 auto; min-width: 0; }
       .painel-condutor { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: stretch; gap: 10px; width: 100%; margin-bottom: 10px; min-height: 170px; }
       .box-atual { border: 2px solid #bdc3c7; border-radius: 12px; padding: 10px; flex: 1 1 20%; min-width: 150px; min-height: 150px; background: #f8f9fa; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); transition: opacity 0.3s ease; }
       .box-proximo { border: 4px solid #EF6C00; border-radius: 12px; padding: 10px; flex: 1 1 35%; min-width: 250px; min-height: 150px; background: white; box-shadow: 0 8px 20px rgba(239,108,0,0.15); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; transition: box-shadow 0.3s ease; }
