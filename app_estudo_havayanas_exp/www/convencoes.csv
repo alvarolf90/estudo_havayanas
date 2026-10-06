@@ -29,12 +29,12 @@ C5;Fundo 1;pe -- -- -- | -- -- -- -- | pe te le co | pe te le co;;;;;pe
 C5;Fundo 2;pe -- -- -- | -- -- -- -- | pe te le co | pe te le co;;;;;pe
 C5;Xequerê;-- -- -- -- | pe -- le -- | -- -- -- -- | -- -- -- --;;;;;
 C5;Repique;-- te le co | pe -- le.le -- | -- -- -- -- | -- -- -- --;;;;;
-C6;Dobra;-- -- -- -- | pe.ta.la le -- | -- -- -- -- | pe.ta.la le --;;;;;
-C6;Caixa;pe.ta.la le -- | -- -- -- -- | pe.ta.la le -- | -- -- -- -- ;;;;;
-C6;Repique;pe.ta.la le -- | -- -- -- -- | pe.ta.la le -- | -- -- -- -- ;;;;;
-C6;Fundo 1;-- -- -- -- | pe.ta.la le -- | -- -- -- -- | pe.ta.la le --;;;;;
-C6;Fundo 2;-- -- -- -- | pe.ta.la le -- | -- -- -- -- | pe.ta.la le --;;;;;
-C6;Xequerê;pe -- le -- | pe -- le -- | -- -- -- -- | -- -- -- --;;;;;
+C6;Dobra;-- -- -- -- | pe.ta.la le | -- -- -- -- | pe.ta.la le;;;;;
+C6;Caixa;pe.ta.la le | -- -- -- -- | pe.ta.la le | -- -- -- -- ;;;;;
+C6;Repique;pe.ta.la le | -- -- -- -- | pe.ta.la le | -- -- -- -- ;;;;;
+C6;Fundo 1;-- -- -- -- | pe.ta.la le | -- -- -- -- | pe.ta.la le;;;;;
+C6;Fundo 2;-- -- -- -- | pe.ta.la le | -- -- -- -- | pe.ta.la le;;;;;
+C6;Xequerê;pe -- le -- | -- -- -- -- | pe -- le -- | -- -- -- --;;;;;
 C7;Dobra;-- -- -- -- | -- -- le -- | -- -- le -- | -- -- le --;;;;;
 C7;Fundo 1;-- -- -- -- | -- -- le -- | -- -- le -- | -- -- le --;;;;;
 C7;Fundo 2;-- -- -- -- | -- -- le -- | -- -- le -- | -- -- le --;;;;;
@@ -122,9 +122,9 @@ Conv. V2;Xequerê;-- -- -- -- | pe -- -- -- | -- -- -- -- | -- -- -- --;;;;1;pe
 Conv. V2;Repique;-- -- -- -- | pe.pe -- -- -- | -- -- -- -- | -- -- -- --;;;;1;pe
 Conv. V2;Fundo 1;pe te -- -- | -- -- -- -- | -- -- -- co | pe te le co;;;;1;pe
 Conv. V2;Fundo 2;pe te -- -- | -- -- -- -- | -- -- -- co | pe te le co;;;;1;pe
-Convencinha 6;Dobra;-- -- -- -- | pe.ta.la le -- ;;;;0,5;
-Convencinha 6;Caixa;pe.ta.la le -- | -- -- -- -- ;;;;0,5;
-Convencinha 6;Repique;pe.ta.la le -- | -- -- -- -- ;;;;0,5;
-Convencinha 6;Fundo 1;-- -- -- -- | pe.ta.la le -- ;;;;0,5;
-Convencinha 6;Fundo 2;-- -- -- -- | pe.ta.la le -- ;;;;0,5;
-Convencinha 6;Xequerê;pe -- le -- | pe -- le -- ;;;;0,5;
+Convencinha 6;Dobra;-- -- -- -- | pe.ta.la le ;;;;0,5;
+Convencinha 6;Caixa;pe.ta.la le | -- -- -- -- ;;;;0,5;
+Convencinha 6;Repique;pe.ta.la le | -- -- -- -- ;;;;0,5;
+Convencinha 6;Fundo 1;-- -- -- -- | pe.ta.la le ;;;;0,5;
+Convencinha 6;Fundo 2;-- -- -- -- | pe.ta.la le ;;;;0,5;
+Convencinha 6;Xequerê;pe -- le -- | -- -- -- -- ;;;;0,5;
