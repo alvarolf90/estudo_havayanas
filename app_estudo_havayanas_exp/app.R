@@ -862,7 +862,7 @@ server <- function(input, output, session) {
   output$titulo_instrumento <- renderText({ paste("Leitura -", input$instrumento) })
   
   estado <- reactiveValues(
-    rodando = FALSE, exibir_box_atual = TRUE, exibir_leitura = TRUE, veio_de_convencao = TRUE, nota_forcada = "",
+    rodando = FALSE, exibir_box_atual = TRUE, exibir_leitura = TRUE, veio_de_convencao = TRUE, pula_entrada = FALSE, nota_forcada = "",
     fase_atual = "Levada", padrao_atual = "", compassos_restantes = 0, compassos_tocados = 0,
     proxima_fase = "", proximo_padrao = "", proximos_compassos = 0,
     modo_sequencia = FALSE, sequencia_passos = list(), sequencia_indice = 1, sequencia_fim = FALSE, sequencia_nome = "",
@@ -957,6 +957,7 @@ server <- function(input, output, session) {
     estado$proximo_padrao <- ""
     estado$proxima_fase <- ""
     estado$compassos_tocados <- 0
+    estado$pula_entrada <- FALSE
     estado$nota_forcada <- ""
     estado$sequencia_indice <- 1
     estado$sequencia_fim <- FALSE
@@ -993,7 +994,16 @@ server <- function(input, output, session) {
     }
   }
   
-  processar_compasso <- function(padrao, instrumento, fase, tocados, veio_conv, nota_forcada = "") {
+  # TRUE se a levada tem Pula_Entrada=Sim em qualquer linha do CSV (varre todas as linhas,
+  # pra não depender de qual instrumento tem a célula preenchida)
+  levada_pula_entrada <- function(padrao) {
+    col <- grep("^Pula", colnames(df_levadas), value = TRUE, ignore.case = TRUE)[1]
+    if (is.na(col)) return(FALSE)
+    vals <- df_levadas[[col]][df_levadas$Levada == padrao]
+    any(toupper(trimws(as.character(vals))) %in% c("SIM", "S", "TRUE", "1"), na.rm = TRUE)
+  }
+  
+  processar_compasso <- function(padrao, instrumento, fase, tocados, veio_conv, nota_forcada = "", pula_entrada = FALSE) {
     if (fase == "Levada") { df <- df_levadas[df_levadas$Levada == padrao & df_levadas$Instrumento == instrumento, ] }
     else { df <- df_convencoes[df_convencoes$Convencao == padrao & df_convencoes$Instrumento == instrumento, ] }
     if (nrow(df) == 0) return("-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --")
@@ -1019,17 +1029,22 @@ server <- function(input, output, session) {
       if (!is.na(val_loop) && toupper(trimws(as.character(val_loop))) %in% c("SIM", "S", "TRUE", "1")) is_loop_c2 <- TRUE
     }
     
+    # Pula o compasso de entrada (compasso 1) quando a levada vem logo depois de outra
+    # levada/convenção (ver avancar_fase) e está marcada no CSV com Pula_Entrada=Sim
+    pular <- (fase == "Levada") && isTRUE(pula_entrada) && levada_pula_entrada(padrao)
+    tocados_idx <- if (pular) tocados + 1 else tocados
+    
     # 3. Faz o looping matemático baseado na quantidade exata de compassos da levada
     if (is_loop_c2 && length(valores_validos) >= 2) { 
-      idx <- if (tocados == 0) 1 else 2 
+      idx <- if (tocados_idx == 0) 1 else 2 
     } else { 
-      idx <- (tocados %% length(valores_validos)) + 1 
+      idx <- (tocados_idx %% length(valores_validos)) + 1 
     }
     
     comp_str <- valores_validos[idx]
     
     if (fase == "Levada") { 
-      if (tocados == 0 && veio_conv) comp_str <- gsub("\\([^)]+\\)", "--", comp_str) 
+      if (tocados == 0 && veio_conv && !pular) comp_str <- gsub("\\([^)]+\\)", "--", comp_str) 
       else comp_str <- gsub("\\(|\\)", "", comp_str) 
     } else { 
       comp_str <- gsub("\\(|\\)", "", comp_str) 
@@ -1054,6 +1069,10 @@ server <- function(input, output, session) {
     }
     
     estado$veio_de_convencao <- (fase_anterior == "Convenção")
+    # Levadas marcadas com Pula_Entrada=Sim no CSV (ex.: Swing 1/2/3, Alujá) pulam o
+    # compasso de entrada quando vêm logo depois de outra levada ou de uma convenção
+    # (exceto Pausa, que conta como silêncio). Início da sessão/Pausa: mantém a entrada.
+    estado$pula_entrada <- (fase_anterior == "Levada") || (fase_anterior == "Convenção" && !identical(padrao_anterior, "Pausa"))
     estado$fase_atual <- estado$proxima_fase
     estado$padrao_atual <- estado$proximo_padrao
     
@@ -1121,7 +1140,7 @@ server <- function(input, output, session) {
     for (inst in insts_tocar) {
       if (inst == instrumento_ativo()) {
         if (estado$padrao_atual == "Variada") { comp_str <- str_variada; if (estado$compassos_tocados == 0 && nf != "") comp_str <- sub("^\\S+", nf, trimws(comp_str))
-        } else { comp_str <- processar_compasso(estado$padrao_atual, inst, estado$fase_atual, estado$compassos_tocados, estado$veio_de_convencao, nf) }
+        } else { comp_str <- processar_compasso(estado$padrao_atual, inst, estado$fase_atual, estado$compassos_tocados, estado$veio_de_convencao, nf, estado$pula_entrada) }
       } else {
         id_inst <- gsub(" ", "_", inst); ativas_l <- input[[paste0("acomp_lev_", id_inst)]]; ativas_c <- input[[paste0("acomp_conv_", id_inst)]]
         pode_tocar <- FALSE
@@ -1133,7 +1152,7 @@ server <- function(input, output, session) {
         }
         if (pode_tocar) {
           if (estado$padrao_atual == "Variada") { comp_str <- str_variada; if (estado$compassos_tocados == 0 && nf != "") comp_str <- sub("^\\S+", nf, trimws(comp_str))
-          } else { comp_str <- processar_compasso(estado$padrao_atual, inst, estado$fase_atual, estado$compassos_tocados, estado$veio_de_convencao, nf) }
+          } else { comp_str <- processar_compasso(estado$padrao_atual, inst, estado$fase_atual, estado$compassos_tocados, estado$veio_de_convencao, nf, estado$pula_entrada) }
         } else { comp_str <- "-- -- -- -- | -- -- -- -- | -- -- -- -- | -- -- -- --" }
       }
       
@@ -1201,7 +1220,7 @@ server <- function(input, output, session) {
       shinyjs::disable("levadas_ativas"); shinyjs::disable("variada_opcoes"); shinyjs::disable("conv_ativas"); shinyjs::disable("acompanhamento_ativo")
       shinyjs::disable("seq_bpm_control"); shinyjs::disable("seq_acompanhamento_ativo")
       
-      estado$veio_de_convencao <- TRUE; estado$nota_forcada <- ""
+      estado$veio_de_convencao <- TRUE; estado$pula_entrada <- FALSE; estado$nota_forcada <- ""
       
       if (isTRUE(estado$modo_sequencia)) {
         estado$sequencia_indice <- 1
