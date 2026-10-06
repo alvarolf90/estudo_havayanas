@@ -43,11 +43,29 @@ convencoes_disponiveis <- unique(df_convencoes$Convencao)
 instrumentos_disponiveis <- unique(c(df_levadas$Instrumento, df_convencoes$Instrumento))
 
 todos_padroes <- unique(c(levadas_disponiveis, convencoes_disponiveis))
-map_imagens <- sapply(todos_padroes, function(nome) {
+# Acha o arquivo de imagem do sinal (tolera "Forró 1" -> forro1.png ou forro_1.png)
+arquivo_imagem <- function(nome) {
   if (nome == "Pausa") return("")
-  nome_limpo <- limpar_nome_imagem(nome)
-  return(paste0(nome_limpo, ".png"))
-}, USE.NAMES = TRUE)
+  base <- limpar_nome_imagem(nome)
+  candidatos <- unique(c(base, gsub("_([0-9])", "\\1", base)))
+  for (cand in candidatos) {
+    if (file.exists(file.path("www", paste0(cand, ".png")))) return(paste0(cand, ".png"))
+  }
+  return(paste0(base, ".png"))
+}
+map_imagens <- sapply(todos_padroes, arquivo_imagem, USE.NAMES = TRUE)
+
+# Miniatura do sinal ao lado do nome (listas de levadas e convenções)
+rotulo_com_icone <- function(nome) {
+  arq <- if (nome %in% names(map_imagens)) map_imagens[[nome]] else ""
+  tem <- nzchar(arq) && file.exists(file.path("www", "ico", arq))
+  caixa <- if (tem) tags$img(src = paste0("ico/", arq), alt = "",
+                             style = "max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px;")
+           else NULL
+  tags$span(style = "display: inline-flex; align-items: center; gap: 10px;",
+            tags$span(style = "display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 40px; flex-shrink: 0;", caixa),
+            tags$span(nome))
+}
 
 arquivos_wav <- sapply(instrumentos_disponiveis, function(nome) {
   nome_limpo <- tolower(nome)
@@ -642,7 +660,7 @@ ui <- page_sidebar(
       open = c("Levadas", "Convenções", "Acompanhamento", "Mixagem"),
       
       accordion_panel("Levadas", 
-                      checkboxGroupInput("levadas_ativas", NULL, choices = levadas_disponiveis, selected = character(0)),
+                      checkboxGroupInput("levadas_ativas", NULL, choiceNames = lapply(levadas_disponiveis, rotulo_com_icone), choiceValues = levadas_disponiveis, selected = character(0)),
                       conditionalPanel(
                         condition = "input.levadas_ativas && input.levadas_ativas.indexOf('Variada') > -1",
                         div(
@@ -652,7 +670,7 @@ ui <- page_sidebar(
                         )
                       )
       ),
-      accordion_panel("Convenções", checkboxGroupInput("conv_ativas", NULL, choices = convencoes_disponiveis, selected = character(0))),
+      accordion_panel("Convenções", checkboxGroupInput("conv_ativas", NULL, choiceNames = lapply(convencoes_disponiveis, rotulo_com_icone), choiceValues = convencoes_disponiveis, selected = character(0))),
       accordion_panel("Acompanhamento", 
                       checkboxGroupInput("acompanhamento_ativo", "Adicionar à banda:", choices = character(0), selected = character(0)),
                       uiOutput("config_acompanhamento")
