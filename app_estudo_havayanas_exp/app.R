@@ -466,6 +466,8 @@ ui <- page_sidebar(
           window.timbre = payload.timbre;
           window.instPrincipal = payload.instPrincipal; window.isLoop = payload.isLoop;
           window.measureQueue = payload.batch;
+          // Passo com BPM proprio no inicio da sequencia: a contagem ja usa essa velocidade
+          if (payload.batch && payload.batch[0] && payload.batch[0].bpm) window.bpm = Number(payload.batch[0].bpm);
           window.metadeAtiva = 1;
 
           let now = window.audioCtx.currentTime; let beatDur = 60.0 / window.bpm;
@@ -563,7 +565,7 @@ ui <- page_sidebar(
 
               scheduleMeasure(m, m_next, window.audioQueueTime);
 
-              let beatDurAtual = 60.0 / window.bpm;
+              let beatDurAtual = 60.0 / (m.bpm ? Number(m.bpm) : window.bpm);
 
               if (m.fim_sequencia) {
                   let delayMsFim = Math.max(0, ((window.audioQueueTime + beatDurAtual * 4) - window.audioCtx.currentTime) * 1000);
@@ -596,7 +598,7 @@ ui <- page_sidebar(
       };
 
       function scheduleMeasure(m, m_next, startTime) {
-          let beatDur = 60.0 / window.bpm; let delayMs = Math.max(0, (startTime - window.audioCtx.currentTime) * 1000);
+          let beatDur = 60.0 / (m && m.bpm ? Number(m.bpm) : window.bpm); let delayMs = Math.max(0, (startTime - window.audioCtx.currentTime) * 1000);
           let currentMet = window.metadeAtiva;
 
           // Metronomo na Pausa: mesmo bipe da contagem inicial, 1 por tempo
@@ -874,9 +876,13 @@ ui <- page_sidebar(
       
       div(style = "max-width: 480px; margin: 0 auto; text-align: left;",
         
-        div(style = "display: flex; gap: 15px; margin-bottom: 5px;",
-          div(style = "flex: 1;", selectInput("seq_instrumento", "Instrumento:", choices = instrumentos_disponiveis, selected = "Dobra", width = "100%")),
-          div(style = "flex: 1;", sliderInput("seq_bpm", "BPM:", min = 40, max = 150, value = 80, step = 5, width = "100%"))
+        selectInput("seq_instrumento", "Instrumento:", choices = instrumentos_disponiveis, selected = "Dobra", width = "100%"),
+        radioButtons("seq_bpm_modo", "Velocidade do exercício:",
+                     choices = c("Sugerida (o aluno pode mudar)" = "sugerida", "Fixa (o aluno não pode mudar)" = "fixa", "Sem velocidade predefinida (o aluno escolhe)" = "livre"),
+                     selected = "sugerida", width = "100%"),
+        conditionalPanel(
+          condition = "input.seq_bpm_modo != 'livre'",
+          sliderInput("seq_bpm", "BPM:", min = 40, max = 150, value = 80, step = 5, width = "100%")
         ),
         
         hr(),
@@ -900,6 +906,7 @@ ui <- page_sidebar(
             ),
             checkboxGroupInput("seq_instrumentos_passo", NULL, choices = instrumentos_disponiveis, selected = instrumentos_disponiveis, inline = TRUE)
         ),
+        numericInput("seq_bpm_passo", "Velocidade a partir deste passo (BPM) — opcional, vazio mantém a anterior:", value = NA, min = 30, max = 240, step = 5, width = "100%"),
         tags$details(style = "margin: 6px 0 10px 0;",
           tags$summary("Avançado: começar em outro compasso e levada/entrada por instrumento", style = "cursor: pointer; font-weight: bold; color: #5E2157; font-size: 0.9em;"),
           div(style = "padding: 8px; border: 1px solid #eee; border-radius: 6px; margin-top: 6px;",
@@ -972,7 +979,8 @@ server <- function(input, output, session) {
     proxima_fase = "", proximo_padrao = "", proximos_compassos = 0,
     modo_sequencia = FALSE, sequencia_passos = list(), sequencia_indice = 1, sequencia_fim = FALSE, sequencia_nome = "",
     passos_sequencia_editor = list(), sequencia_bpm = NULL, sequencia_instrumento = NULL,
-    inicio_atual = 1, inicio_proximo = 1, ov_atual = list(), ov_proximo = list(), meio_desloc = FALSE
+    inicio_atual = 1, inicio_proximo = 1, ov_atual = list(), ov_proximo = list(), meio_desloc = FALSE,
+    bpm_efetivo = NA_real_, bpm_proximo = NA_real_
   )
   
   bpm_ativo <- function() if (isTRUE(estado$modo_sequencia)) estado$sequencia_bpm else input$bpm
@@ -1064,7 +1072,7 @@ server <- function(input, output, session) {
     estado$proxima_fase <- ""
     estado$compassos_tocados <- 0
     estado$pula_entrada <- FALSE
-    estado$inicio_atual <- 1; estado$inicio_proximo <- 1; estado$ov_atual <- list(); estado$ov_proximo <- list(); estado$meio_desloc <- FALSE
+    estado$inicio_atual <- 1; estado$inicio_proximo <- 1; estado$ov_atual <- list(); estado$ov_proximo <- list(); estado$meio_desloc <- FALSE; estado$bpm_efetivo <- NA_real_; estado$bpm_proximo <- NA_real_
     estado$inst_atual <- "*"; estado$inst_proximo <- "*"
     estado$nota_forcada <- ""
     estado$sequencia_indice <- 1
@@ -1202,6 +1210,7 @@ server <- function(input, output, session) {
     estado$fase_atual <- estado$proxima_fase
     estado$padrao_atual <- estado$proximo_padrao
     estado$inicio_atual <- estado$inicio_proximo; estado$ov_atual <- estado$ov_proximo
+    if (!is.na(estado$bpm_proximo)) estado$bpm_efetivo <- estado$bpm_proximo   # BPM do passo vale dali em diante (até outro passo mudar)
     
     estado$compassos_restantes <- estado$proximos_compassos
     estado$meio_desloc <- (fase_anterior == "Convenção") && (get_duracao(padrao_anterior, df_convencoes) < 1) && identical(estado$fase_atual, "Levada")
@@ -1223,6 +1232,7 @@ server <- function(input, output, session) {
         ini_n <- max(1, as.numeric(nz(passo$inicio, 1)))
         estado$inicio_proximo <- ini_n
         estado$ov_proximo <- if (is.null(passo$ov)) list() else passo$ov
+        estado$bpm_proximo <- suppressWarnings(as.numeric(nz(passo$bpm, NA)))
         if (identical(passo$tipo, "levada")) {
           estado$proxima_fase <- "Levada"
           estado$proximo_padrao <- passo$padrao
@@ -1374,6 +1384,7 @@ server <- function(input, output, session) {
     res <- list(html = strings_comp[[instrumento_ativo()]], strings = strings_comp, nome = nome_exib, 
                 img = img_atual, restantes = ceiling(estado$compassos_restantes), futuro = estado$proximo_padrao, futuro_img = img_prox,
                 fim_sequencia = FALSE, fora = as.list(fora), principal_fora = (instrumento_ativo() %in% fora))
+    if (isTRUE(estado$modo_sequencia) && !is.na(estado$bpm_efetivo)) res$bpm <- estado$bpm_efetivo
     estado$compassos_restantes <- estado$compassos_restantes - 1; estado$compassos_tocados <- estado$compassos_tocados + 1
     preencher_proximo()
     if (isTRUE(estado$modo_sequencia) && isTRUE(estado$sequencia_fim) && estado$compassos_restantes <= 0) res$fim_sequencia <- TRUE
@@ -1406,7 +1417,7 @@ server <- function(input, output, session) {
       shinyjs::disable("seq_bpm_control"); shinyjs::disable("seq_acompanhamento_ativo")
       
       estado$veio_de_convencao <- TRUE; estado$pula_entrada <- FALSE; estado$nota_forcada <- ""
-      estado$inicio_atual <- 1; estado$inicio_proximo <- 1; estado$ov_atual <- list(); estado$ov_proximo <- list(); estado$meio_desloc <- FALSE
+      estado$inicio_atual <- 1; estado$inicio_proximo <- 1; estado$ov_atual <- list(); estado$ov_proximo <- list(); estado$meio_desloc <- FALSE; estado$bpm_efetivo <- NA_real_; estado$bpm_proximo <- NA_real_
       
       if (isTRUE(estado$modo_sequencia)) {
         estado$sequencia_indice <- 1
@@ -1416,6 +1427,7 @@ server <- function(input, output, session) {
         ini_p <- max(1, as.numeric(nz(primeiro$inicio, 1)))
         estado$inicio_atual <- ini_p
         estado$ov_atual <- if (is.null(primeiro$ov)) list() else primeiro$ov
+        estado$bpm_efetivo <- suppressWarnings(as.numeric(nz(primeiro$bpm, NA)))
         estado$sequencia_indice <- 2
         if (identical(primeiro$tipo, "levada")) {
           estado$fase_atual <- "Levada"
@@ -1521,6 +1533,9 @@ server <- function(input, output, session) {
       if (length(item) > 0) ov[[inst_k]] <- item
     }
     if (length(ov) > 0) novo$ov <- ov
+    bp <- suppressWarnings(as.numeric(input$seq_bpm_passo))
+    if (length(bp) == 1 && !is.na(bp) && bp >= 30) novo$bpm <- bp
+    updateNumericInput(session, "seq_bpm_passo", value = "")
     updateNumericInput(session, "seq_inicio_compasso", value = 1)
     for (k in seq_along(instrumentos_disponiveis)) {
       updateSelectInput(session, paste0("seq_ov_", k), selected = "")
@@ -1561,6 +1576,7 @@ server <- function(input, output, session) {
       rotulo <- if (identical(p$tipo, "levada")) paste0(i, ". ", p$padrao, " (", p$compassos, " compassos)") else paste0(i, ". [Convenção] ", p$padrao)
       if (!is.null(p$instrumentos)) rotulo <- paste0(rotulo, " — toca: ", paste(p$instrumentos, collapse = ", "))
       if (!is.null(p$inicio)) rotulo <- paste0(rotulo, " — a partir do compasso ", p$inicio)
+      if (!is.null(p$bpm)) rotulo <- paste0(rotulo, " — ", p$bpm, " BPM")
       if (length(p$ov) > 0) {
         partes_ov <- vapply(names(p$ov), function(n) {
           o <- p$ov[[n]]; txt <- n
@@ -1589,10 +1605,11 @@ server <- function(input, output, session) {
     
     seq_obj <- list(
       nome = nome,
-      bpm = input$seq_bpm,
       instrumento = input$seq_instrumento,
       passos = passos
     )
+    if (!identical(input$seq_bpm_modo, "livre")) seq_obj$bpm <- input$seq_bpm
+    if (identical(input$seq_bpm_modo, "fixa")) seq_obj$bpm_fixo <- TRUE
     
     session$sendCustomMessage("gerarLinkSequencia", seq_obj)
   })
@@ -1629,6 +1646,7 @@ server <- function(input, output, session) {
     if (!is.null(seq$instrumento)) updateSelectInput(session, "instrumento", selected = seq$instrumento)
     
     updateSliderInput(session, "seq_bpm_control", value = estado$sequencia_bpm)
+    if (isTRUE(seq$bpm_fixo)) shinyjs::runjs("$('#seq_bpm_control').closest('.form-group').hide();")
     updateCheckboxGroupInput(session, "seq_acompanhamento_ativo", choices = setdiff(instrumentos_disponiveis, estado$sequencia_instrumento), selected = character(0))
     
     shinyjs::hide("sidebar_principal")
