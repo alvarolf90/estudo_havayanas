@@ -32,6 +32,17 @@ if (file.exists(caminho_levadas) && file.exists(caminho_convencoes)) {
   df_convencoes <- read.csv(caminho_convencoes, sep = ";", stringsAsFactors = FALSE)
 } 
 
+# Mixagem por levada/convenção (www/volumes.csv: Padrao;Instrumento;Volume;Reverb, escala 0-100 como no mixer de referência).
+# Padrão/instrumento ausentes na tabela mantêm o volume de sempre. Reverb (0-100) alimenta o efeito de reverberação no navegador.
+df_volumes <- tryCatch(read.csv("www/volumes.csv", sep = ";", stringsAsFactors = FALSE), error = function(e) NULL)
+vol_tabela <- function(padrao, inst, coluna = "Volume") {
+  if (is.null(df_volumes) || !nzchar(padrao) || !(coluna %in% names(df_volumes))) return(NA_real_)
+  v <- df_volumes[[coluna]][df_volumes$Padrao == padrao & df_volumes$Instrumento == inst]
+  v <- suppressWarnings(as.numeric(sub(",", ".", as.character(v), fixed = TRUE)))
+  if (length(v) == 0 || is.na(v[1])) return(NA_real_)
+  max(0, v[1]) / 100
+}
+
 dict_variada <- c(
   "PeTaLa" = "pe ta la", "Pe" = "pe -- -- --", "PeLe" = "pe -- le --",
   "PeTeLeCo" = "pe te le co", "Pe----Co" = "pe -- -- co", "TeLeCo" = "-- te le co",
@@ -166,6 +177,33 @@ ui <- page_sidebar(
           if (window.audioCtx && window.audioCtx.state === 'suspended') window.audioCtx.resume();
       });
 
+      // Reverb (send por nota, valores do volumes.csv). Convolver com resposta sintetica de ruido decaindo.
+      window.reverbGanho = 5.0; window.wetAtual = 0;
+      window.reverbIn = function() {
+        if (!window._rv || window._rv.dest !== window.masterGain) {
+          if (!window._rvIR) {
+            const ctx = window.audioCtx; const len = Math.floor(ctx.sampleRate * 1.8);
+            const ir = ctx.createBuffer(2, len, ctx.sampleRate);
+            for (let c = 0; c < 2; c++) {
+              const d = ir.getChannelData(c); let e = 0;
+              for (let i = 0; i < len; i++) { d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3); e += d[i] * d[i]; }
+              const norm = 1 / Math.sqrt(e); for (let i = 0; i < len; i++) d[i] *= norm;
+            }
+            window._rvIR = ir;
+          }
+          const conv = window.audioCtx.createConvolver(); conv.buffer = window._rvIR; conv.connect(window.masterGain);
+          window._rv = { conv: conv, dest: window.masterGain };
+        }
+        return window._rv.conv;
+      };
+      window.saida = function(node) {
+        node.connect(window.masterGain);
+        if (window.wetAtual > 0) {
+          const s = window.audioCtx.createGain(); s.gain.value = window.wetAtual;
+          node.connect(s); s.connect(window.reverbIn());
+        }
+      };
+
       window.measureQueue = [];
       window.isPlaying = false;
       window.audioQueueTime = 0;
@@ -202,12 +240,12 @@ ui <- page_sidebar(
 
           source.connect(filtro);
           filtro.connect(gainNode);
-          gainNode.connect(window.masterGain);
+          window.saida(gainNode);
           source.start(time);
           source.stop(time + paraEm);
         } else {
           source.connect(gainNode);
-          gainNode.connect(window.masterGain);
+          window.saida(gainNode);
           source.start(time);
         }
       };
@@ -322,7 +360,7 @@ ui <- page_sidebar(
 
       function playOscillator(freq, time, dur, vol, type = 'sine') {
         const osc = window.audioCtx.createOscillator(); const gain = window.audioCtx.createGain();
-        osc.type = type; osc.connect(gain); gain.connect(window.masterGain);
+        osc.type = type; osc.connect(gain); window.saida(gain);
         osc.frequency.setValueAtTime(freq, time); gain.gain.setValueAtTime(vol, time);
         gain.gain.exponentialRampToValueAtTime(0.001, time + dur); osc.start(time); osc.stop(time + dur);
       }
@@ -333,21 +371,29 @@ ui <- page_sidebar(
           const osc = window.audioCtx.createOscillator(); const gain = window.audioCtx.createGain();
           osc.type = 'sine'; osc.frequency.setValueAtTime(freq * 1.8, time); osc.frequency.exponentialRampToValueAtTime(freq * 0.6, time + dur);
           gain.gain.setValueAtTime(vol * 1.8, time); gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
-          osc.connect(gain); gain.connect(window.masterGain); osc.start(time); osc.stop(time + dur);
+          osc.connect(gain); window.saida(gain); osc.start(time); osc.stop(time + dur);
           const noise = window.audioCtx.createBufferSource(); noise.buffer = getNoiseBuffer();
           const filter = window.audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.setValueAtTime(300, time);
           const noiseGain = window.audioCtx.createGain(); noiseGain.gain.setValueAtTime(vol * 0.4, time); noiseGain.gain.exponentialRampToValueAtTime(0.01, time + 0.02);
-          noise.connect(filter); filter.connect(noiseGain); noiseGain.connect(window.masterGain); noise.start(time); noise.stop(time + 0.02);
+          noise.connect(filter); filter.connect(noiseGain); window.saida(noiseGain); noise.start(time); noise.stop(time + 0.02);
         } else {
           const noise = window.audioCtx.createBufferSource(); noise.buffer = getNoiseBuffer();
           const filter = window.audioCtx.createBiquadFilter(); filter.type = isAlta ? 'highpass' : 'bandpass'; filter.frequency.setValueAtTime(isAlta ? 1800 : freq * 2, time); filter.Q.value = 3.0;
           const noiseGain = window.audioCtx.createGain(); noiseGain.gain.setValueAtTime(vol * (isAlta ? 1.6 : 1.0), time); noiseGain.gain.exponentialRampToValueAtTime(0.001, time + (isAlta ? dur * 1.2 : dur));
-          noise.connect(filter); filter.connect(noiseGain); noiseGain.connect(window.masterGain); noise.start(time); noise.stop(time + dur * 1.2);
+          noise.connect(filter); filter.connect(noiseGain); window.saida(noiseGain); noise.start(time); noise.stop(time + dur * 1.2);
           playOscillator(freq, time, dur * 0.8, vol * 0.6, 'triangle');
         }
       }
 
       function playSyntheticSound(tipo, time, pack, instrumento_str, timbre, isPrincipal) {
+        let ii = instrumento_str ? instrumento_str : 'Caixa';
+        let rv = (window.revMedida && window.revMedida[ii] !== undefined) ? Number(window.revMedida[ii]) : 0;
+        window.wetAtual = rv * window.reverbGanho;
+        try { playSyntheticSoundInterno(tipo, time, pack, instrumento_str, timbre, isPrincipal); }
+        finally { window.wetAtual = 0; }
+      }
+
+      function playSyntheticSoundInterno(tipo, time, pack, instrumento_str, timbre, isPrincipal) {
         let token = tipo.trim(); if (token === '--' || token === '') return;
         let cleanToken = token.replace(/[*~]/g, ''); let base = cleanToken.toLowerCase().replace(/[^a-z]/g, '');
         let isAlta = (cleanToken === cleanToken.toUpperCase() && base !== '');
@@ -360,9 +406,11 @@ ui <- page_sidebar(
             if (window.volAcompMap && window.volAcompMap[inst] !== undefined) {
                 balanceVol = window.volAcompMap[inst];
             } else {
-                balanceVol = 0.5;
+                balanceVol = 0.75;
             }
         }
+        // Mixagem da levada/convencao (volumes.csv): vale para todos, foco e acompanhamentos
+        if (window.volMedida && window.volMedida[inst] !== undefined) balanceVol *= Number(window.volMedida[inst]);
         let instVol = 1.0; let instLow = inst.toLowerCase();
 
         let baseFreq = 400;
@@ -689,6 +737,8 @@ ui <- page_sidebar(
               }, dM);
           }
 
+          window.volMedida = (m && m.vol) ? m.vol : {};
+          window.revMedida = (m && m.rev) ? m.rev : {};
           for (let inst in m.strings) {
               let isPrin = (inst === window.instPrincipal); let bStr = m.strings[inst]; if (!bStr) continue;
               let beats = bStr.split('|');
@@ -704,6 +754,7 @@ ui <- page_sidebar(
                   }
               }
           }
+          window.volMedida = null; window.revMedida = null;
       }
     ")))
   ),
@@ -1001,7 +1052,7 @@ server <- function(input, output, session) {
       for (inst in input$acompanhamento_ativo) {
         id_inst <- gsub(" ", "_", inst)
         val <- input[[paste0("vol_", id_inst)]]
-        vol_map[[inst]] <- if(is.null(val)) 0.5 else (val / 100.0)
+        vol_map[[inst]] <- if(is.null(val)) 0.75 else (val / 100.0)
       }
     }
     session$sendCustomMessage("updateVolume", list(p = vol_p, a = vol_map))
@@ -1012,7 +1063,7 @@ server <- function(input, output, session) {
     vol_map <- list()
     if (length(input$seq_acompanhamento_ativo) > 0) {
       for (inst in input$seq_acompanhamento_ativo) {
-        vol_map[[inst]] <- 0.7
+        vol_map[[inst]] <- 0.75
       }
     }
     session$sendCustomMessage("updateVolume", list(p = 1.0, a = vol_map))
@@ -1022,7 +1073,7 @@ server <- function(input, output, session) {
     req(input$acompanhamento_ativo)
     ui_list <- lapply(input$acompanhamento_ativo, function(inst) {
       id_inst <- gsub(" ", "_", inst)
-      sliderInput(paste0("vol_", id_inst), paste("Volume -", inst, ":"), min = 0, max = 100, value = 50, step = 5, post = "%")
+      sliderInput(paste0("vol_", id_inst), paste("Volume -", inst, ":"), min = 0, max = 100, value = 75, step = 5, post = "%")
     })
     do.call(tagList, ui_list)
   })
@@ -1296,7 +1347,7 @@ server <- function(input, output, session) {
     
     # Compasso de um instrumento para um contexto de passo (atual ou próximo). tocados_i = compassos já tocados do passo
     calc_um <- function(inst, ctx, tocados_i, nf_i) {
-      if (!nzchar(ctx$padrao)) return(list(str = str_silencio, fora = TRUE))
+      if (!nzchar(ctx$padrao)) return(list(str = str_silencio, fora = TRUE, pad = ""))
       # Sequência com lista de instrumentos por passo: quem não toca neste passo fica em silêncio
       if (em_seq && !("*" %in% ctx$inst) && !(inst %in% ctx$inst)) return(list(str = str_silencio, fora = TRUE))
       # Opções avançadas do passo: início em outro compasso, levada/convenção própria e entrada (compasso/tempo) por instrumento
@@ -1328,9 +1379,10 @@ server <- function(input, output, session) {
         tempos_m[seq_len(ate)] <- " -- -- -- -- "
         comp_str <- paste(tempos_m, collapse = "|")
       }
-      list(str = comp_str, fora = FALSE)
+      list(str = comp_str, fora = FALSE, pad = padrao_i)
     }
     
+    vol_comp <- list(); rev_comp <- list()
     for (inst in insts_tocar) {
       if (meia_conv) {
         a <- calc_um(inst, ctx_atual, n_t, "")
@@ -1347,6 +1399,9 @@ server <- function(input, output, session) {
         comp_str <- a$str
         if (a$fora) fora <- c(fora, inst)
       }
+      
+      vt <- vol_tabela(nz(a$pad, ""), inst); if (!is.na(vt)) vol_comp[[inst]] <- vt
+      rv <- vol_tabela(nz(a$pad, ""), inst, "Reverb"); if (!is.na(rv)) rev_comp[[inst]] <- rv
       
       if (estado$compassos_restantes == 1 && tolower(estado$proximo_padrao) == "c2" && inst %in% c("Caixa", "Repique")) {
         tempos <- strsplit(comp_str, "\\|")[[1]]
@@ -1383,7 +1438,7 @@ server <- function(input, output, session) {
     
     res <- list(html = strings_comp[[instrumento_ativo()]], strings = strings_comp, nome = nome_exib, 
                 img = img_atual, restantes = ceiling(estado$compassos_restantes), futuro = estado$proximo_padrao, futuro_img = img_prox,
-                fim_sequencia = FALSE, fora = as.list(fora), principal_fora = (instrumento_ativo() %in% fora))
+                fim_sequencia = FALSE, vol = vol_comp, rev = rev_comp, fora = as.list(fora), principal_fora = (instrumento_ativo() %in% fora))
     if (isTRUE(estado$modo_sequencia) && !is.na(estado$bpm_efetivo)) res$bpm <- estado$bpm_efetivo
     estado$compassos_restantes <- estado$compassos_restantes - 1; estado$compassos_tocados <- estado$compassos_tocados + 1
     preencher_proximo()
@@ -1462,11 +1517,11 @@ server <- function(input, output, session) {
         for (inst in input$acompanhamento_ativo) {
           id_inst <- gsub(" ", "_", inst)
           val <- input[[paste0("vol_", id_inst)]]
-          vol_map[[inst]] <- if(is.null(val)) 0.5 else (val / 100.0)
+          vol_map[[inst]] <- if(is.null(val)) 0.75 else (val / 100.0)
         }
       } else if (isTRUE(estado$modo_sequencia) && length(input$seq_acompanhamento_ativo) > 0) {
         for (inst in input$seq_acompanhamento_ativo) {
-          vol_map[[inst]] <- 0.7
+          vol_map[[inst]] <- 0.75
         }
       }
       
