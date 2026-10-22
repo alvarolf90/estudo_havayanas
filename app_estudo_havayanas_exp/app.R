@@ -107,6 +107,9 @@ map_wav_js <- paste0("{", paste(sprintf("'%s': '%s'", instrumentos_disponiveis, 
 # ==============================================================================
 # 2. INTERFACE DO USUÁRIO (UI)
 # ==============================================================================
+# Versão (hash do conteúdo) do robô 3D, para o navegador não usar uma cópia antiga em cache
+versao_robo <- tryCatch({ h <- unname(tools::md5sum("www/robo3d.js")); if (is.na(h)) "1" else substr(h, 1, 8) }, error = function(e) "1")
+
 ui <- page_sidebar(
   title = div(style = "color: white; font-weight: 900; font-style: italic; letter-spacing: -1px;", "HAVAYANAS USADAS"),
   theme = bs_theme(version = 5, "font-sans-serif" = "system-ui, -apple-system, sans-serif"),
@@ -114,6 +117,8 @@ ui <- page_sidebar(
   
   tags$head(
     tags$meta(name = "viewport", content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"),
+    tags$script(src = "three.min.js"),
+    tags$script(src = paste0("robo3d.js?v=", versao_robo)),
     tags$style(HTML("
       body, .bslib-page-sidebar, .bslib-sidebar-layout > .main { background-color: #5E2157 !important; }
       .navbar { background-color: #EF6C00 !important; border-bottom: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
@@ -137,8 +142,8 @@ ui <- page_sidebar(
       #levadas_ativas .checkbox label > span, #conv_ativas .checkbox label > span { flex: 1 1 auto; min-width: 0; display: block; }
       .rotulo-sinal { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex: 1 1 auto; min-width: 0; }
       .painel-condutor { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: stretch; gap: 10px; width: 100%; margin-bottom: 10px; min-height: 170px; }
-      .box-atual { border: 2px solid #bdc3c7; border-radius: 12px; padding: 10px; flex: 1 1 20%; min-width: 150px; min-height: 150px; background: #f8f9fa; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); transition: opacity 0.3s ease; }
-      .box-proximo { border: 4px solid #EF6C00; border-radius: 12px; padding: 10px; flex: 1 1 35%; min-width: 250px; min-height: 150px; background: white; box-shadow: 0 8px 20px rgba(239,108,0,0.15); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; transition: box-shadow 0.3s ease; }
+      .box-atual { border: 2px solid #bdc3c7; border-radius: 12px; padding: 10px; flex: 1 1 20%; min-width: 150px; height: 190px; min-height: 190px; max-height: 190px; overflow: hidden; background: #f8f9fa; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); transition: opacity 0.3s ease; }
+      .box-proximo { border: 4px solid #EF6C00; border-radius: 12px; padding: 10px; flex: 1 1 35%; min-width: 250px; height: 190px; min-height: 190px; max-height: 190px; background: white; box-shadow: 0 8px 20px rgba(239,108,0,0.15); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; transition: box-shadow 0.3s ease; }
       .box-contagem { border: 4px solid #5E2157; border-radius: 12px; padding: 15px; flex: 1 1 35%; min-width: 250px; background: white; box-shadow: 0 8px 20px rgba(94,33,87,0.15); display: flex; flex-direction: column; align-items: center; justify-content: center; }
       
       .contador-numero { font-size: clamp(2.2rem, 4vw, 3.5rem); font-weight: 900; color: #5E2157; line-height: 1; text-shadow: 2px 2px 5px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; height: auto; }
@@ -150,12 +155,19 @@ ui <- page_sidebar(
       .span-tempo { transition: color 0.1s ease-in-out; display: inline-block; border-radius: 4px; }
       .acomp-panel { margin-top: 15px; padding: 12px; border-left: 4px solid #EF6C00; background-color: #fcfcfc; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
+      @media (min-width: 769px) {
+        .card > .card-body { width: 100%; max-width: 900px; box-sizing: border-box; }
+        .linha-superior > .box-atual, .linha-superior > .box-proximo { flex: 1 1 0 !important; width: 0; min-width: 0 !important; box-sizing: border-box; overflow: hidden; }
+        #robo_maestro { flex: 0 0 172px; width: 172px; min-width: 172px !important; box-sizing: border-box; }
+      }
+
       @media (max-width: 768px) {
         .card-body { width: 100% !important; max-width: 100%; box-sizing: border-box; }
         .main { overflow-anchor: none; }
         .painel-condutor { flex-direction: column; }
         .linha-superior, .linha-inferior { flex-direction: column; }
         .box-atual, .box-proximo, .box-contagem { width: 100% !important; min-width: 0; min-height: 220px; }
+        .box-atual, .box-proximo { height: 220px; max-height: 220px; }
         #robo_maestro { align-self: center; width: auto; }
         .contador-numero { height: 120px; font-size: clamp(5rem, 15vw, 6rem) !important; }
         #cabecalho_livre { flex-wrap: wrap; justify-content: center !important; gap: 10px; text-align: center; }
@@ -346,6 +358,7 @@ ui <- page_sidebar(
 
       window.stopPlayback = function() {
         window.isPlaying = false; window.measureQueue = [];
+        if (window.Robo3D) { try { Robo3D.parar(); } catch(e) {} }
         if(window.schedulerTimer) clearInterval(window.schedulerTimer);
         if(window.masterGain) window.masterGain.disconnect();
         window.masterGain = window.audioCtx.createGain(); window.masterGain.connect(window.audioCtx.destination);
@@ -579,6 +592,7 @@ ui <- page_sidebar(
                       $('#foot-r').css('transform', 'translateX(-15px)');
                   }
                   // =============================================== //
+                  if (window.Robo3D) { try { Robo3D.beat('__contagem', i, beatDur * 1000, false, window.instPrincipal || null, []); } catch(e) {} }
                   
                   let n = window.measureQueue[0];
                   let iH = n && n.img ? '<img src=\"' + n.img + '\" style=\"max-height: 55px; max-width: 100%; object-fit: contain;\">' : '<div style=\"height: 55px;\"></div>';
@@ -631,6 +645,7 @@ ui <- page_sidebar(
 
       window.finalizarSequencia = function() {
           window.isPlaying = false; window.measureQueue = [];
+          if (window.Robo3D) { try { Robo3D.parar(); } catch(e) {} }
           if (window.schedulerTimer) clearInterval(window.schedulerTimer);
           if (window.masterGain) window.masterGain.disconnect();
           window.masterGain = window.audioCtx.createGain(); window.masterGain.connect(window.audioCtx.destination);
@@ -644,6 +659,29 @@ ui <- page_sidebar(
 
           Shiny.setInputValue('sequencia_terminou', Math.random(), {priority: 'event'});
       };
+
+      // Batidas de um tempo do compasso para o robô: [[sílaba, fração do tempo], ...] (frações >= 1 = tempo seguinte)
+      function tokensDoBeat(bStr, b, desloc) {
+          let out = []; if (!bStr) return out;
+          let beats = bStr.split('|'); if (!beats[b]) return out;
+          let tks = beats[b].trim().split(/\\s+/).filter(t => t.length > 0);
+          for (let j = 0; j < tks.length; j++) {
+              let tk = tks[j]; let f0 = j / tks.length;
+              if (tk.includes('.')) { let sub = tk.split('.'); for (let k = 0; k < sub.length; k++) out.push([sub[k], desloc + f0 + (k / sub.length) / tks.length]); }
+              else out.push([tk, desloc + f0]);
+          }
+          return out;
+      }
+      function batidasRobo(m, m_next, i) {
+          let inst = window.instPrincipal; if (!inst || !m || !m.strings) return [];
+          let t = tokensDoBeat(m.strings[inst], i, 0);
+          if (i < 3) t = t.concat(tokensDoBeat(m.strings[inst], i + 1, 1));
+          else if (m_next && m_next.strings) t = t.concat(tokensDoBeat(m_next.strings[inst], 0, 1));
+          return t;
+      }
+      $(document).on('shiny:inputchanged', function(e) {
+          if ((e.name === 'instrumento' || e.name === 'seq_instrumento') && window.Robo3D) { try { Robo3D.setInst(e.value); } catch(x) {} }
+      });
 
       function scheduleMeasure(m, m_next, startTime) {
           let beatDur = 60.0 / (m && m.bpm ? Number(m.bpm) : window.bpm); let delayMs = Math.max(0, (startTime - window.audioCtx.currentTime) * 1000);
@@ -697,6 +735,7 @@ ui <- page_sidebar(
                   $('#span-tempo-' + cId).css({'color': '#EF6C00', 'text-shadow': '0px 0px 4px rgba(239,108,0,0.3)'});
                   
                   // ====== ANIMAÇÃO DO ROBÔ ====== //
+                  if (window.Robo3D) { try { Robo3D.beat(m.nome, i, beatDur * 1000, (!window.isLoop && m.restantes === 1), window.instPrincipal || null, batidasRobo(m, m_next, i)); } catch(e) {} }
                   
                   // 1. A Pisada Lateral (Abre, junta direita, abre, junta esquerda)
                   if (i === 0) { 
@@ -898,6 +937,17 @@ ui <- page_sidebar(
             <circle cx=\"85\" cy=\"32\" r=\"3.5\" fill=\"#2c3e50\" />
             <rect x=\"55\" y=\"43\" width=\"30\" height=\"5\" rx=\"2.5\" fill=\"#2c3e50\" />
           </svg>
+          <div id=\"robo3d_palco\" style=\"display:none; width:150px; height:190px;\"></div>
+          <script>
+            $(function() {
+              try {
+                if (window.Robo3D && Robo3D.init('robo3d_palco', 150, 190)) {
+                  $('#robo_maestro svg').hide();
+                  $('#robo3d_palco').show();
+                }
+              } catch(e) {}
+            });
+          </script>
           ")
         ),
         
