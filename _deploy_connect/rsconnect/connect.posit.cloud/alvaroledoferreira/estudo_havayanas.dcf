@@ -1,0 +1,10 @@
+name: estudo_havayanas
+title: Estudo Havayanas
+username: alvaroledoferreira
+account: alvaroledoferreira
+server: connect.posit.cloud
+hostUrl: https://api.connect.posit.cloud/v1
+appId: 01a1634f-b453-89f2-e33a-ddbc4fc4649d
+bundleId:
+url: https://connect.posit.cloud/alvaroledoferreira/content/01a1634f-b453-89f2-e33a-ddbc4fc4649d
+version: 1

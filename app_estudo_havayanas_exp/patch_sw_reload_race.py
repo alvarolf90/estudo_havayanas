@@ -149,6 +149,15 @@ MARKER_5 = "busca-html-real-pelo-frame-pai-e-injeta-no-iframe-sem-reload"
 
 MAX_RELOAD_RETRIES = 2
 
+# Parte 6 (2026-10-22): plano B automatico. Copia do mesmo app publicada no
+# Posit Connect Cloud (R rodando no servidor, sem webR nem Service Worker, entao
+# imune ao bug do WebKit). Se o iframe cair no 404 do GitHub Pages, a pagina
+# vai direto pra la levando o #seq= junto; se o app demorar demais pra abrir,
+# aparece um aviso com o link. Vazio = parte 6 desligada (volta ao
+# comportamento antigo das partes 3/5).
+FALLBACK_URL = "https://01a1634f-b453-89f2-e33a-ddbc4fc4649d.share.connect.posit.cloud/"
+FALLBACK_AFTER_SECONDS = 25
+
 PATCH_SCRIPT = """<script>
     // Fix (parte 1/3): posit-dev/shinylive#133 - navigator.serviceWorker.ready
     // resolve antes do controllerchange real (afeta Safari/WebKit). Baseado no
@@ -269,6 +278,43 @@ WAIT_BLOCK = """import { runExportedApp } from "./shinylive/shinylive.js";
         var softFixKey = "REPLACE_MARKER_5";
         var maxReloadRetries = REPLACE_MAX_RELOAD_RETRIES;
         var seen = new WeakSet();
+        // Parte 6: versao alternativa (Connect Cloud)
+        var fallbackUrl = "REPLACE_FALLBACK_URL";
+        function irParaAlternativa(motivo) {
+          if (!fallbackUrl) return false;
+          console.log("[fix iframe 404] parte 6: indo para a versao alternativa (" + motivo + ").");
+          window.location.replace(fallbackUrl + (window.location.hash || ""));
+          return true;
+        }
+        function appConectado(iframe) {
+          try {
+            var S = iframe && iframe.contentWindow && iframe.contentWindow.Shiny;
+            return !!(S && S.shinyapp && S.shinyapp.isConnected && S.shinyapp.isConnected());
+          } catch (e) {
+            return false;
+          }
+        }
+        if (fallbackUrl) {
+          setTimeout(function () {
+            if (appConectado(root.querySelector("iframe"))) return;
+            var aviso = document.createElement("a");
+            aviso.href = fallbackUrl + (window.location.hash || "");
+            aviso.textContent = "O app está demorando para abrir? Toque aqui para abrir a versão alternativa.";
+            aviso.setAttribute(
+              "style",
+              "position:fixed;left:12px;right:12px;bottom:12px;z-index:99999;padding:14px 16px;" +
+                "border-radius:12px;background:#EF6C00;color:#fff;font:600 16px/1.3 system-ui,sans-serif;" +
+                "text-align:center;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,.3)"
+            );
+            document.body.appendChild(aviso);
+            var t = setInterval(function () {
+              if (appConectado(root.querySelector("iframe"))) {
+                clearInterval(t);
+                if (aviso.parentNode) aviso.parentNode.removeChild(aviso);
+              }
+            }, 1000);
+          }, REPLACE_FALLBACK_MS);
+        }
 
         function hardReload() {
           var count = 0;
@@ -381,6 +427,7 @@ WAIT_BLOCK = """import { runExportedApp } from "./shinylive/shinylive.js";
             }
             if (!doc || !/\\/app_[^/]+\\//.test(iframe.src || "")) return;
             if ((doc.title || "").indexOf("GitHub Pages") === -1) return;
+            if (irParaAlternativa("iframe caiu no 404 do GitHub Pages")) return;
             var softTried = false;
             try {
               softTried = sessionStorage.getItem(softFixKey) === "1";
@@ -410,6 +457,8 @@ WAIT_BLOCK = """import { runExportedApp } from "./shinylive/shinylive.js";
     "REPLACE_MARKER_3", MARKER_3
 ).replace("REPLACE_MARKER_5", MARKER_5).replace(
     "REPLACE_MAX_RELOAD_RETRIES", str(MAX_RELOAD_RETRIES)
+).replace("REPLACE_FALLBACK_URL", FALLBACK_URL).replace(
+    "REPLACE_FALLBACK_MS", str(FALLBACK_AFTER_SECONDS * 1000)
 )
 
 # Qualquer variante anterior das partes 2/3/5 que precise ser removida antes
