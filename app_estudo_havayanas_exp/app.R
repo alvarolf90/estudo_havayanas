@@ -151,14 +151,23 @@ ui <- page_sidebar(
       @keyframes blinker { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
       .piscar { animation: blinker 1s linear infinite; }
       
-      #texto_peteleco { font-size: clamp(14px, 1.8vw, 24px); font-family: monospace; font-weight: bold; color: #2c3e50; line-height: 1.3; text-align: center; padding: 0; margin: 0; min-height: 50px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+      #texto_peteleco { font-size: clamp(14px, 1.8vw, 24px); font-family: monospace; font-weight: bold; color: #2c3e50; line-height: 1.3; text-align: center; padding: 0; margin: 0; min-height: 6.3em; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+      #status_texto { min-height: 58px; display: flex; align-items: center; }
+      html, .bslib-sidebar-layout > .main { scrollbar-gutter: stable; }
       .span-tempo { transition: color 0.1s ease-in-out; display: inline-block; border-radius: 4px; }
       .acomp-panel { margin-top: 15px; padding: 12px; border-left: 4px solid #EF6C00; background-color: #fcfcfc; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
       @media (min-width: 769px) {
         .card > .card-body { width: 100%; max-width: 900px; box-sizing: border-box; }
-        .linha-superior > .box-atual, .linha-superior > .box-proximo { flex: 1 1 0 !important; width: 0; min-width: 0 !important; box-sizing: border-box; overflow: hidden; }
-        #robo_maestro { flex: 0 0 172px; width: 172px; min-width: 172px !important; box-sizing: border-box; }
+        #status_texto { flex: 1 1 0; min-width: 0; }
+        #cabecalho_livre > div:first-child > div { flex: 0 0 auto; white-space: nowrap; }
+        /* Desktop: o robô vira uma coluna alta à esquerda (ocupa as duas linhas) e as caixas ficam espremidas ao lado, sem aumentar a altura total */
+        .painel-condutor { display: grid !important; grid-template-columns: 250px minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: 190px 212px; gap: 8px 15px; align-items: stretch; }
+        .linha-superior, .linha-inferior { display: contents !important; }
+        .linha-superior > .box-atual { grid-column: 2; grid-row: 1; width: auto !important; min-width: 0 !important; box-sizing: border-box; overflow: hidden; }
+        .linha-superior > .box-proximo { grid-column: 3; grid-row: 1; width: auto !important; min-width: 0 !important; box-sizing: border-box; overflow: hidden; }
+        .linha-inferior > .box-contagem { grid-column: 2 / 4; grid-row: 2; height: auto; min-width: 0 !important; box-sizing: border-box; }
+        #robo_maestro { grid-column: 1; grid-row: 1 / 3; width: auto; min-width: 0 !important; box-sizing: border-box; }
       }
 
       @media (max-width: 768px) {
@@ -721,6 +730,8 @@ ui <- page_sidebar(
               let str2 = (currentMet === 1) ? m_next.html : m.html;
               $('#texto_peteleco').html('<div style=\"margin-bottom: 3px;\">' + formatPetelecoLine(str1, 0) + '</div><div>' + formatPetelecoLine(str2, 4) + '</div>');
               ajustarLarguraLeitura();
+              // trava a altura da leitura no maior valor já visto, para a tela não 'pular' ao tocar/pausar
+              try { var el = document.getElementById('texto_peteleco'); var h = el.offsetHeight; if (h > (window._minLeit || 0)) { window._minLeit = h; el.style.minHeight = h + 'px'; } } catch(e) {}
 
           }, delayMs);
 
@@ -937,13 +948,19 @@ ui <- page_sidebar(
             <circle cx=\"85\" cy=\"32\" r=\"3.5\" fill=\"#2c3e50\" />
             <rect x=\"55\" y=\"43\" width=\"30\" height=\"5\" rx=\"2.5\" fill=\"#2c3e50\" />
           </svg>
-          <div id=\"robo3d_palco\" style=\"display:none; width:150px; height:190px;\"></div>
+          <div id=\"robo3d_palco\" style=\"display:none;\"></div>
           <script>
             $(function() {
               try {
-                if (window.Robo3D && Robo3D.init('robo3d_palco', 150, 190)) {
+                var roboTam = function() { return window.matchMedia('(min-width: 769px)').matches ? [230, 390, 1.2] : [200, 250, 1.15]; };
+                var tam0 = roboTam();
+                if (window.Robo3D && Robo3D.init('robo3d_palco', tam0[0], tam0[1])) {
+                  Robo3D.resize(tam0[0], tam0[1], tam0[2]);
+                  $(window).on('resize', function() { try { window._minLeit = 0; var pel = document.getElementById('texto_peteleco'); if (pel) pel.style.minHeight = ''; var t = roboTam(); Robo3D.resize(t[0], t[1], t[2]); } catch(x) {} });
                   $('#robo_maestro svg').hide();
                   $('#robo3d_palco').show();
+                  Robo3D.setInst($('#instrumento').val() || 'Dobra');
+                  $(document).on('shiny:connected', function() { try { Robo3D.setInst($('#instrumento').val() || 'Dobra'); } catch(x) {} });
                 }
               } catch(e) {}
             });

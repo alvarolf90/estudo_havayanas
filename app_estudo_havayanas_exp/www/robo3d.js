@@ -113,18 +113,52 @@
 
   // ---------- Instrumento (por enquanto só a Dobra: surdo pendurado + 2 baquetas) ----------
   // Regra das mãos (todos os instrumentos menos o xequerê): pe, le (e la) = mão DIREITA; te, co (e ta) = mão ESQUERDA.
-  var INSTR = { 'Dobra': true };
-  var surdo, surdoCorpo, baquetaD, baquetaE, _pCouro = {};
+  // tipos: Dobra e Fundos = surdo; Caixa e Repique = tambor menor; Xequerê = chocalho de cabaça
+  // movimento da mão: rest = altura de descanso, prep = pico do preparo numa nota normal, acc = pico numa nota de destaque,
+  // lead/leadAcc = quanto antes (ms) a mão começa a subir, desc = duração da descida até o couro
+  var MOV = {
+    surdo: { rest: 0.75, prep: 1.0,  acc: 1.7, lead: 520, leadAcc: 700, desc: 150 },
+    caixa: { rest: 0.16, prep: 0.30, acc: 1.15, lead: 200, leadAcc: 440, desc: 90 }
+  };
+  var TIPOS = {
+    dobra:   { k: 'tambor', rx: 1.0,  ry: 1.0,  mov: 'surdo', baq: 'bola' },
+    fundo1:  { k: 'tambor', rx: 1.12, ry: 1.15, mov: 'surdo', baq: 'bola' },
+    fundo2:  { k: 'tambor', rx: 1.12, ry: 1.15, mov: 'surdo', baq: 'bola' },
+    caixa:   { k: 'tambor', rx: 0.78, ry: 0.55, mov: 'caixa', baq: 'madeira' },
+    repique: { k: 'tambor', rx: 0.66, ry: 0.55, mov: 'caixa', baq: 'plastico' },
+    xequere: { k: 'xeq' }
+  };
+  function tipoInst(nome) {
+    if (!nome) return null;
+    var k = String(nome).toLowerCase().replace(/[\u0300-\u036f]/g, '').normalize ? String(nome).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+    return TIPOS[k] || null;
+  }
+  var surdo, surdoCorpo, baquetaD, baquetaE, xeq, _pCouro = {}, _tipoAtual = null;
   var L1 = 0.44, L2 = 0.40, BAQ = 0.5, LEVANTA = 1;   // LEVANTA = 1 → 'h' vai de 0 (batida) a 1 (mão no alto)
   // direção da baqueta (da mão até a ponta): para frente, um pouco para baixo e para dentro (as duas se encontram no couro)
   var GIRO_INST = 0.45, _vsL = {}, _vsN = {};
   [-1, 1].forEach(function (l) { _vsN[l] = new THREE.Vector3(-l * 0.15, -0.3, 0.9).normalize(); _vsL[l] = _vsN[l].clone().multiplyScalar(BAQ); });
   function cil24(r, h, c) { return new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 28), mat(c)); }
+  // três tipos de baqueta: 'bola' (Dobra e Fundos: haste com bolinha laranja), 'madeira' (Caixa: baqueta toda de madeira, mais grossa no cabo)
+  // e 'plastico' (Repique: duas varetas finas de plástico duro, sem bolinha). A ponta de todas fica a BAQ da mão.
   function criarBaqueta() {
-    var g = new THREE.Group();
-    var haste = cil(0.02, 0.58, 0xE8C9A0); haste.position.y = -0.17; g.add(haste);   // sai um pouco por trás do punho
-    var bola = esf(0.055, LARANJA); bola.position.y = -0.455; g.add(bola);
+    var g = new THREE.Group(), tipos = {};
+    var b1 = new THREE.Group();
+    var haste = cil(0.02, 0.58, 0xE8C9A0); haste.position.y = -0.17; b1.add(haste);   // sai um pouco por trás do punho
+    var bola = esf(0.055, LARANJA); bola.position.y = -0.455; b1.add(bola);
+    var b2 = new THREE.Group();
+    var cone = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.017, 0.62, 14), mat(0xC98B45)); cone.position.y = -0.19; b2.add(cone);
+    var ponta = esf(0.026, 0xC98B45); ponta.scale.set(1, 1.35, 1); ponta.position.y = -0.485; b2.add(ponta);
+    var b3 = new THREE.Group();
+    var vara = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.62, 10), mat(0xF4C542)); vara.position.y = -0.19; b3.add(vara);
+    tipos.bola = b1; tipos.madeira = b2; tipos.plastico = b3;
+    [b1, b2, b3].forEach(function (x) { g.add(x); });
+    g.userData.tipos = tipos;
     g.visible = false; tronco.add(g); return g;
+  }
+  function escolheBaqueta(g, nome) {
+    var t = g.userData.tipos;
+    Object.keys(t).forEach(function (k) { t[k].visible = (k === nome); });
   }
   function construirInstrumento() {
     surdo = new THREE.Group(); surdo.position.set(0, -0.24, 0.66); surdo.rotation.x = 0.45; surdo.visible = false; tronco.add(surdo);
@@ -136,10 +170,32 @@
     surdo.updateMatrix();
     [-1, 1].forEach(function (l) { _pCouro[l] = new THREE.Vector3(0.14 * l, 0.2135, 0.06).applyMatrix4(surdo.matrix); });
     baquetaD = criarBaqueta(); baquetaE = criarBaqueta();
+    // xequerê: cabaça laranja com a rede de contas amarelas e um cabo
+    xeq = new THREE.Group(); xeq.visible = false; tronco.add(xeq);
+    var cab = esf(0.17, LARANJA); cab.scale.set(1, 1.15, 1); xeq.add(cab);
+    var cabo = cil(0.05, 0.3, 0xE8C9A0); cabo.position.y = -0.34; xeq.add(cabo);
+    for (var a = 0; a < 5; a++) for (var h = -2; h <= 2; h++) {
+      var ang = a / 5 * Math.PI * 2 + (h % 2) * 0.3, y = h * 0.095, r = 0.17 * Math.sqrt(Math.max(0, 1 - Math.pow(y / 0.195, 2))) * 1.02;
+      var bola = esf(0.026, 0xf1c40f); bola.position.set(Math.sin(ang) * r, y, Math.cos(ang) * r); xeq.add(bola);
+    }
+    xeq.position.set(0, 0.26, 0.5); xeq.rotation.x = 0.35;
+  }
+  // ajusta o tambor ao tipo (tamanho) mantendo a pele na mesma altura
+  function ajustaTambor(t) {
+    surdoCorpo.userData.base = [t.rx, t.ry, t.rx];
+    surdoCorpo.scale.set(t.rx, t.ry, t.rx);
+    var d = 0.2135 * (1 - t.ry), c = Math.cos(0.45), sn = Math.sin(0.45);
+    surdo.position.set(0, -0.24 + d * c, 0.66 + d * sn);
+    surdo.updateMatrix();
+    [-1, 1].forEach(function (l) { _pCouro[l] = new THREE.Vector3(0.14 * l * t.rx, 0.2135 * t.ry, 0.06).applyMatrix4(surdo.matrix); });
   }
   function aplicaVisibilidade() {
-    var on = !!(est.inst && INSTR[est.inst]);
-    surdo.visible = on; baquetaD.visible = on; baquetaE.visible = on;
+    var t = tipoInst(est.inst);
+    if (t !== _tipoAtual) { _tipoAtual = t; if (t && t.k === 'tambor') ajustaTambor(t); }
+    var tam = !!(t && t.k === 'tambor');
+    surdo.visible = tam; baquetaD.visible = tam; baquetaE.visible = tam;
+    if (tam) { escolheBaqueta(baquetaD, t.baq || 'bola'); escolheBaqueta(baquetaE, t.baq || 'bola'); }
+    xeq.visible = !!(t && t.k === 'xeq');
   }
   function maoDe(tk) {
     tk = String(tk || '').toLowerCase().replace(/[^a-z]/g, '').slice(0, 2);
@@ -147,21 +203,22 @@
     if (tk === 'te' || tk === 'ta' || tk === 'co') return 'E';
     return null;
   }
-  // altura da baqueta (0 = no couro na batida, ~0.75 = descansada, 1 = pico do "preparo")
-  // Antes de cada batida a mão dá uma pequena levantada (preparo) e só então desce.
-  function descida(tau) {          // tau = tempo até a próxima batida (ms)
-    if (tau >= 340) return 0.75;
-    if (tau >= 120) return 0.75 + 0.25 * suave((340 - tau) / 220);   // sobe um pouquinho mais, começando um pouco antes
-    return suave(tau / 120);                                          // e desce até o couro
+  // altura da baqueta (0 = no couro na batida; MOV.rest = descansada; acima = preparo)
+  // Antes de cada batida a mão dá uma levantada (preparo) e só então desce; nota de destaque sobe mais e começa mais cedo.
+  function descida(tau, forte, M) {        // tau = tempo até a próxima batida (ms)
+    var lead = forte ? M.leadAcc : M.lead, pico = forte ? M.acc : M.prep;
+    if (tau >= lead) return M.rest;
+    if (tau >= M.desc) return M.rest + (pico - M.rest) * suave((lead - tau) / (lead - M.desc));
+    return suave(tau / M.desc) * pico;
   }
-  function alturaMao(hits, t) {
-    var tp = -1e9, tn = 1e9, k;
-    for (k = 0; k < hits.length; k++) { if (hits[k] <= t) { if (hits[k] > tp) tp = hits[k]; } else if (hits[k] < tn) tn = hits[k]; }
-    return Math.min(descida(tn - t), suave(lim01((t - tp) / 150)));
+  function alturaMao(hits, t, M) {
+    var tp = -1e9, tn = 1e9, fn = false, k;
+    for (k = 0; k < hits.length; k++) { var h = hits[k].t; if (h <= t) { if (h > tp) tp = h; } else if (h < tn) { tn = h; fn = hits[k].a; } }
+    return Math.min(descida(tn - t, fn, M), suave(lim01((t - tp) / 150)) * 1.8);
   }
   function pulso(hits, t) {
     var p = 0, k;
-    for (k = 0; k < hits.length; k++) { var dt = t - hits[k]; if (dt >= 0 && dt < 120) p = Math.max(p, 1 - dt / 120); }
+    for (k = 0; k < hits.length; k++) { var dt = t - hits[k].t; if (dt >= 0 && dt < 120) p = Math.max(p, (1 - dt / 120) * (hits[k].a ? 1.6 : 1)); }
     return p;
   }
   var _qt = new THREE.Quaternion(), TORCE = 0.9;
@@ -181,8 +238,8 @@
     b.cot.rotation.set(-dobra, 0, 0);
   }
   var _sv = new THREE.Vector3(), _sn = new THREE.Vector3(), _ex1 = new THREE.Vector3(1, 0, 0);
-  function tocarMao(b, baq, lado, hits, agora) {
-    var P = _pCouro[lado], k = alturaMao(hits, agora);   // k: 0 = baqueta no couro, 1 = no alto
+  function tocarMao(b, baq, lado, hits, agora, M) {
+    var P = _pCouro[lado], k = alturaMao(hits, agora, M);   // k: 0 = baqueta no couro, 1 = no alto
     // posição da mão na batida (ponta no couro)
     _mao.copy(P).sub(_vsL[lado]);
     // ao levantar: a mão sobe um pouco e o punho vira a baqueta para cima
@@ -192,11 +249,25 @@
     baq.position.copy(_mao);
     baq.quaternion.setFromUnitVectors(_meno, _sn);
   }
+  var _xb = new THREE.Vector3();
   function aplicaInstrumento(agora) {
-    tocarMao(bracoD, baquetaD, -1, est.hitsD, agora);
-    tocarMao(bracoE, baquetaE, 1, est.hitsE, agora);
+    var t = tipoInst(est.inst);
+    if (!t) return;
     var p = Math.max(pulso(est.hitsD, agora), pulso(est.hitsE, agora));
-    surdoCorpo.scale.set(1 + 0.035 * p, 1 - 0.02 * p, 1 + 0.035 * p);
+    if (t.k === 'xeq') {
+      // chocalho: a cada batida os dois punhos dão um tranco curto para cima e para a frente
+      xeq.position.set(0, 0.26 + 0.07 * p, 0.5 + 0.06 * p); xeq.rotation.x = 0.35 - 0.3 * p;
+      [[bracoD, -1], [bracoE, 1]].forEach(function (x) {
+        _xb.set(0.2 * x[1], -0.12, 0).applyEuler(xeq.rotation).add(xeq.position);
+        ikBraco(x[0], _xb.x, _xb.y, _xb.z);
+      });
+      return;
+    }
+    var M = MOV[t.mov] || MOV.surdo;
+    tocarMao(bracoD, baquetaD, -1, est.hitsD, agora, M);
+    tocarMao(bracoE, baquetaE, 1, est.hitsE, agora, M);
+    var base = surdoCorpo.userData.base || [1, 1, 1];
+    surdoCorpo.scale.set(base[0] * (1 + 0.035 * p), base[1] * (1 - 0.02 * p), base[2] * (1 + 0.035 * p));
   }
 
   // ---------- Pernas com cinemática inversa: o pé fica ONDE a gente manda (no chão, sem afundar) ----------
@@ -232,33 +303,33 @@
     parado: { lift: 0, poses: [P({ bD: -0.2, bE: 0.2 }), P({ bD: 0.2, bE: -0.2 }), P({ bD: -0.2, bE: 0.2 }), P({ bD: 0.2, bE: -0.2 })] },
     padrao: { // pisada lateral de sempre: abre, junta pra direita, abre, junta pra esquerda
       lift: 0.1,
-      poses: [
+      poses: [   // o tempo 1 é pisado com a perna ESQUERDA do robô (a da direita na tela, vendo de frente)
         P({ x: 0, Rx: -0.38, Lx: 0.38, bD: -0.3, bE: 0.3 }),
-        P({ x: -0.2, Rx: -0.38, Lx: -0.02, bD: 0.3, bE: -0.3 }),
+        P({ x: 0.2, Rx: 0.02, Lx: 0.38, bD: 0.3, bE: -0.3 }),
         P({ x: 0, Rx: -0.38, Lx: 0.38, bD: -0.3, bE: 0.3 }),
-        P({ x: 0.2, Rx: 0.02, Lx: 0.38, bD: 0.3, bE: -0.3 })
+        P({ x: -0.2, Rx: -0.38, Lx: -0.02, bD: 0.3, bE: -0.3 })
       ]
     },
-    funk1: { // 4 passos alternados pra direita (D,E,D,E) e 4 pra esquerda (E,D,E,D): ciclo de 2 compassos
+    funk1: { // 4 passos alternados (E,D,E,D) e 4 de volta (D,E,D,E), começando pelo pé esquerdo do robô: ciclo de 2 compassos
       lift: 0.14,
       poses: [
-        P({ x: -0.175, Rx: -0.53, Lx: 0.18, bD: -0.3, bE: 0.3, inclina: 0.05 }),
-        P({ x: -0.35, Rx: -0.53, Lx: -0.17, bD: 0.3, bE: -0.3, inclina: 0.05 }),
-        P({ x: -0.525, Rx: -0.88, Lx: -0.17, bD: -0.3, bE: 0.3, inclina: 0.05 }),
-        P({ x: -0.70, Rx: -0.88, Lx: -0.52, bD: 0.3, bE: -0.3, inclina: 0.05 }),
         P({ x: -0.52, Rx: -0.88, Lx: -0.16, bD: 0.3, bE: -0.3, inclina: -0.05 }),
         P({ x: -0.34, Rx: -0.52, Lx: -0.16, bD: -0.3, bE: 0.3, inclina: -0.05 }),
         P({ x: -0.16, Rx: -0.52, Lx: 0.18, bD: 0.3, bE: -0.3, inclina: -0.05 }),
-        P({ x: 0.02, Rx: -0.16, Lx: 0.18, bD: -0.3, bE: 0.3, inclina: -0.05 })
+        P({ x: 0.02, Rx: -0.16, Lx: 0.18, bD: -0.3, bE: 0.3, inclina: -0.05 }),
+        P({ x: -0.175, Rx: -0.53, Lx: 0.18, bD: -0.3, bE: 0.3, inclina: 0.05 }),
+        P({ x: -0.35, Rx: -0.53, Lx: -0.17, bD: 0.3, bE: -0.3, inclina: 0.05 }),
+        P({ x: -0.525, Rx: -0.88, Lx: -0.17, bD: -0.3, bE: 0.3, inclina: 0.05 }),
+        P({ x: -0.70, Rx: -0.88, Lx: -0.52, bD: 0.3, bE: -0.3, inclina: 0.05 })
       ]
     },
-    funk2: { // pé direito pisa na frente virando o corpo (tempo 1) e vai pra trás (tempo 3)
+    funk2: { // pé esquerdo pisa na frente virando o corpo (tempo 1) e vai pra trás (tempo 3)
       lift: 0.04,
       poses: [
-        P({ giro: 0.36, Rz: 0.45, bD: 0.35, bE: -0.35 }),
-        P({ giro: 0.4, Rz: 0.45, bD: 0.4, bE: -0.4 }),
-        P({ giro: -0.15, Rz: -0.4, bD: -0.35, bE: 0.25 }),
-        P({ giro: -0.18, Rz: -0.4, bD: -0.4, bE: 0.3 })
+        P({ giro: -0.36, Lz: 0.45, bD: -0.35, bE: 0.35 }),
+        P({ giro: -0.4, Lz: 0.45, bD: -0.4, bE: 0.4 }),
+        P({ giro: 0.15, Lz: -0.4, bD: 0.25, bE: -0.35 }),
+        P({ giro: 0.18, Lz: -0.4, bD: 0.3, bE: -0.4 })
       ]
     },
     funk3: { // ombros rolando, um de cada vez, de forma contínua (período de 4 tempos)
@@ -307,10 +378,17 @@
     var d = DANCAS[est.chave];
     var v = calcularV(d, b);
     // mistura rápida ao trocar de dança (evita "teletransporte" dos pés)
-    if (est.mistura && est.ultimoV) {
-      var k = suave((agora - est.mistura) / 160);
+    if (est.mistura && est.deV) {
+      var dur = Math.max(320, est.beatMs * 0.95);          // a transição dura quase um tempo inteiro
+      var k = suave((agora - est.mistura) / dur);
       if (k >= 1) est.mistura = null;
-      else { CORPO.concat(PES, ['subD', 'subE']).forEach(function (c) { v[c] = est.ultimoV[c] + (v[c] - est.ultimoV[c]) * k; }); }
+      else {
+        CORPO.concat(PES, ['subD', 'subE']).forEach(function (c) { v[c] = est.deV[c] + (v[c] - est.deV[c]) * k; });
+        // os pés se arrastam entre as posições: levanta um pouco cada pé que muda de lugar para não deslizar pelo chão
+        var lev = 0.07 * Math.sin(Math.PI * k);
+        if (Math.abs(v.Rx - est.deV.Rx) + Math.abs(v.Rz - est.deV.Rz) > 0.03) v.subD = Math.max(v.subD, lev);
+        if (Math.abs(v.Lx - est.deV.Lx) + Math.abs(v.Lz - est.deV.Lz) > 0.03) v.subE = Math.max(v.subE, lev);
+      }
     }
     est.ultimoV = v;
     var balanco = Math.abs(Math.sin(Math.PI * v.f));
@@ -318,7 +396,7 @@
     raiz.position.set(v.x, 0, v.z);
     raiz.rotation.y = v.giro;
     quadril.position.y = 1.05 - 0.07 * balanco;
-    var tocando = !!(est.inst && INSTR[est.inst]);
+    var tocando = !!tipoInst(est.inst);
     tronco.rotation.y = v.tronco + (tocando ? GIRO_INST : 0);   // tocando, o tronco fica meio de lado para as baquetas aparecerem
     tronco.rotation.z = v.inclina;
     tronco.rotation.x = 0.06 * balanco;
@@ -338,7 +416,7 @@
     bracoD.g.rotation.set(v.bD, 0, -0.18); bracoE.g.rotation.set(v.bE, 0, 0.18);
     bracoD.cot.rotation.set(dobraCot, 0, 0); bracoE.cot.rotation.set(dobraCot, 0, 0);
     tronco.updateMatrix();
-    if (est.inst && INSTR[est.inst]) aplicaInstrumento(agora);
+    if (tipoInst(est.inst)) aplicaInstrumento(agora);
     matOlhos.color.setHex(est.alertaAlvo > 0.5 ? OLHO_ALERTA : OLHO);
 
     // câmera acompanha um pouco o deslocamento lateral
@@ -384,6 +462,16 @@
         return true;
       } catch (e) { pronto = false; return false; }
     },
+    // Redimensiona o palco (ex.: troca de layout desktop/celular)
+    resize: function (larg, alt, zoom) {
+      if (!pronto || !larg || !alt) return;
+      try {
+        renderer.setSize(larg, alt, false);
+        renderer.domElement.style.width = larg + 'px'; renderer.domElement.style.height = alt + 'px';
+        camera.aspect = larg / alt; camera.position.z = 7.4 / (zoom || 1); camera.updateProjectionMatrix();
+        renderer.render(scene, camera);
+      } catch (e) {}
+    },
     // Chamado em cada tempo tocado. nome = levada/convenção, i = 0..3, alerta = último compasso da levada
     beat: function (nome, i, beatMs, alerta, inst, tokens) {
       if (!pronto) return;
@@ -395,19 +483,50 @@
         est.nome = nome; est.n += 1;          // (a chave da dança e o ciclo continuam de onde estavam)
       } else if (nome !== est.nome) {         // levada/convenção nova: reinicia o ciclo da dança no tempo 1
         est.nome = nome; est.n = 0;
-        if (chave !== est.chave) { est.mistura = agora; }
+        if (chave !== est.chave) { est.mistura = agora; est.deV = est.ultimoV ? Object.assign({}, est.ultimoV) : null; }
         est.chave = chave;
       } else { est.n += 1; }
       est.t = agora; est.beatMs = beatMs > 50 ? beatMs : 600;
       est.alertaAlvo = alerta ? 1 : 0;
       est.tocando = true;
       // batidas deste tempo (e do próximo, para a mão já descer antes): [[sílaba, fração do tempo], ...]
-      est.hitsD = est.hitsD.filter(function (t) { return t < agora - 5 && t > agora - 600; });
-      est.hitsE = est.hitsE.filter(function (t) { return t < agora - 5 && t > agora - 600; });
+      est.hitsD = est.hitsD.filter(function (h) { return h.t < agora - 5 && h.t > agora - 600; });
+      est.hitsE = est.hitsE.filter(function (h) { return h.t < agora - 5 && h.t > agora - 600; });
+      // mão de cada batida: regra do toque (pe/le/la = direita, te/ta/co = esquerda), mas nunca a mesma mão em batidas seguidas
+      // (ex.: "ta.ta" vira esquerda-direita). Escolhe a combinação que menos foge da regra sem repetir a mão em notas próximas.
+      var seq = [];
       (tokens || []).forEach(function (x) {
-        var m = maoDe(x[0]); if (!m) return;
-        (m === 'D' ? est.hitsD : est.hitsE).push(agora + x[1] * est.beatMs);
+        var n = maoDe(x[0]); if (!n) return;
+        var lim = String(x[0]).replace(/[*~()]/g, '');
+        seq.push({ n: n, f: x[1], a: lim === lim.toUpperCase() && /[A-Z]/.test(lim) });
       });
+      seq.sort(function (p, q) { return p.f - q.f; });
+      if (seq.length) {
+        var PERTO = 0.76, ult = est.ultMao;   // ult = última batida já feita {m, t}
+        var N = seq.length, custo = [null], vem = [], i2;
+        for (i2 = 0; i2 < N; i2++) {
+          var cur = { D: 1e9, E: 1e9 }, de = {};
+          ['D', 'E'].forEach(function (h) {
+            var dev = (h === seq[i2].n ? 0 : 1 + 0.01 * (N - i2)), best = 1e9, bp = null;
+            (i2 === 0 ? [ult ? ult.m : null] : ['D', 'E']).forEach(function (hp) {
+              var gap = i2 === 0 ? (ult ? (agora + seq[0].f * est.beatMs - ult.t) / est.beatMs : 9) : seq[i2].f - seq[i2 - 1].f;
+              var conf = (hp && hp === h && gap <= PERTO) ? 10 : 0;
+              var base = i2 === 0 ? 0 : custo[i2][hp];
+              if (base + conf < best) { best = base + conf; bp = hp; }
+            });
+            cur[h] = best + dev; de[h] = bp;
+          });
+          custo.push(cur); vem.push(de);
+        }
+        var hf = custo[N].D <= custo[N].E ? 'D' : 'E', esc = new Array(N);
+        for (i2 = N - 1; i2 >= 0; i2--) { esc[i2] = hf; hf = vem[i2][hf]; }
+        var passada = null;
+        seq.forEach(function (q, k2) {
+          (esc[k2] === 'D' ? est.hitsD : est.hitsE).push({ t: agora + q.f * est.beatMs, a: q.a });
+          if (q.f < 1) passada = { m: esc[k2], t: agora + q.f * est.beatMs };   // última batida deste tempo = contexto do próximo
+        });
+        if (passada) est.ultMao = passada;
+      }
       acordar();
     },
     setInst: function (nome) {
@@ -419,12 +538,14 @@
     parar: function () {
       if (!pronto) return;
       est.tocando = false; est.alertaAlvo = 0; est.nome = null; est.chave = 'parado'; est.n = 0; est.t = performance.now(); est.mistura = null;
-      est.alerta = 0; est.hitsD = []; est.hitsE = [];
+      est.alerta = 0; est.hitsD = []; est.hitsE = []; est.ultMao = null;
       var agora = performance.now();
       try { aplicar(0, agora); renderer.render(scene, camera); } catch (e) {}
     },
     // só para testes
     _torce: function (v) { TORCE = v; Robo3D.setInst('Dobra'); },
+    _pes: function () { raiz.updateMatrixWorld(true); var f=function(q){var b=new THREE.Box3().setFromObject(q.pe),c=new THREE.Vector3();b.getCenter(c);return [c.x,b.min.y]}; return { D: f(pernaD), E: f(pernaE) }; },
+    _maos: function () { var o = []; est.hitsD.forEach(function (h) { o.push([Math.round(h.t), 'D', h.a ? 1 : 0]); }); est.hitsE.forEach(function (h) { o.push([Math.round(h.t), 'E', h.a ? 1 : 0]); }); return o.sort(function (a, b) { return a[0] - b[0]; }); },
     _estado: function () { return { chave: est.chave, nome: est.nome, n: est.n }; },
     _teste: function (chave, b) { est.chave = chave; est.mistura = null; var t = performance.now(); aplicar(b, t); renderer.render(scene, camera); return { pesY: [pernaD, pernaE].map(function (p) { return new THREE.Box3().setFromObject(p.pe).min.y; }) }; }
   };
